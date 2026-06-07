@@ -207,7 +207,7 @@ export function LandingPage() {
 
             {/* 카테고리 그리드 */}
             <div className="grid grid-cols-3 gap-2">
-              {(['telecom','subscription','insurance','utility','housing','rental'] as const).map(slug => {
+              {(['telecom','subscription','insurance','utility','housing','rental','tax','vehicle','finance','business','other'] as const).map(slug => {
                 const meta = CATEGORY_META[slug]
                 const items = DEMO_ITEMS.filter(i => i.category === slug && i.status === 'active')
                 const total = items.reduce((s, i) => s + toMonthlyAmount(i), 0)
@@ -228,8 +228,8 @@ export function LandingPage() {
 
         {/* 항목 목록 탭 */}
         {activeTab === 'items' && (
-          <div className="space-y-2.5 max-h-[500px] overflow-y-auto pr-0.5">
-            {DEMO_ITEMS.slice(0, 8).map(item => (
+          <div className="space-y-2.5 max-h-[600px] overflow-y-auto pr-0.5">
+            {DEMO_ITEMS.map(item => (
               <DemoItemCard key={item.id} item={item} />
             ))}
           </div>
@@ -290,6 +290,36 @@ export function LandingPage() {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* SEO 텍스트 섹션 */}
+      <section className="px-4 max-w-lg mx-auto mb-8">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
+          <h2 className="text-base font-bold text-gray-800">Life Capsule — AI 생활비 관리 앱</h2>
+          <p className="text-sm text-gray-600 leading-relaxed">
+            Life Capsule은 구독 관리, 보험료 관리, 통신비 절약, 렌탈 비용 추적, 세금 납부 알림을 한 곳에서 해결하는 AI 기반 생활비 관리 플랫폼입니다. 넷플릭스·유튜브·애플 등 OTT 자동 갱신 구독부터 실손보험·자동차보험 만료일, 코웨이 정수기 의무기간, 월세·관리비 납부일까지 모두 관리할 수 있어요.
+          </p>
+          <div className="grid grid-cols-2 gap-3 text-xs text-gray-500">
+            {[
+              ['📱 통신비 절약', 'SKT·KT·LG U+ 요금제 약정 만료 알림, 번호이동 타이밍 관리'],
+              ['🎬 구독 관리', '넷플릭스·유튜브·티빙·웨이브 등 OTT 구독 비용 한눈에 파악'],
+              ['🛡️ 보험료 관리', '실손·암보험·치아보험·자동차보험 만기·갱신 일정 추적'],
+              ['🏠 렌탈 비용', '정수기·공기청정기·안마의자 렌탈 의무기간 만료 알림'],
+              ['💡 공과금 자동화', '전기요금·도시가스·아파트 관리비 납부일 자동 등록'],
+              ['💼 세금 일정', '자동차세·재산세·종합소득세 납부기한 미리 알림'],
+              ['🚗 차량 관리', '자동차보험 갱신, 하이패스 충전, 차량 리스 비용 관리'],
+              ['💳 카드 혜택', '신한·삼성·KB·현대카드 혜택 달성률 및 최적 카드 추천'],
+            ].map(([title, desc]) => (
+              <div key={title} className="space-y-0.5">
+                <p className="font-semibold text-gray-700">{title}</p>
+                <p className="leading-relaxed">{desc}</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-gray-400 leading-relaxed">
+            AI 영수증 분석, 문자 자동 파싱, 카드 청구서 OCR 인식으로 항목을 자동 등록합니다. 납부일 7일 전·30일 전 푸시 알림으로 연체를 예방하고, 월별·카테고리별 지출 통계로 불필요한 구독을 정리하세요.
+          </p>
         </div>
       </section>
 
