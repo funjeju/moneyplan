@@ -21,9 +21,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
+function serializeItem(item: (typeof DEMO_ITEMS)[0]) {
+  return {
+    ...item,
+    contractEndDate: item.contractEndDate
+      ? item.contractEndDate.toDate().toISOString()
+      : null,
+    createdAt: item.createdAt?.toDate().toISOString() ?? null,
+    updatedAt: item.updatedAt?.toDate().toISOString() ?? null,
+  }
+}
+
 export default async function DemoItemDetailPage({ params }: Props) {
   const { id } = await params
   const item = DEMO_ITEMS.find(i => i.id === id)
   if (!item) notFound()
-  return <DemoItemDetail item={item} />
+  return <DemoItemDetail item={serializeItem(item) as any} />
 }

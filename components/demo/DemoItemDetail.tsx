@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { ResponsibilityItem } from '@/lib/types'
-import { DEMO_CARDS } from '@/lib/demo-data'
+import { DEMO_CARDS, DEMO_ITEMS } from '@/lib/demo-data'
 import { CATEGORY_META } from '@/lib/utils/category'
 import { fmtMoney, toMonthlyAmount, getDaysUntilExpiry, getDaysUntilPayment } from '@/lib/utils'
 import {
@@ -84,7 +84,7 @@ export function DemoItemDetail({ item }: Props) {
             icon: Clock,
             label: '만료일',
             value: item.contractEndDate
-              ? `${item.contractEndDate.toDate().toLocaleDateString('ko-KR')} (${daysExpiry !== null && daysExpiry < 0 ? '만료됨' : `${daysExpiry}일 후`})`
+              ? `${(typeof (item.contractEndDate as any).toDate === 'function' ? (item.contractEndDate as any).toDate() : new Date(item.contractEndDate as any)).toLocaleDateString('ko-KR')} (${daysExpiry !== null && daysExpiry < 0 ? '만료됨' : `${daysExpiry}일 후`})`
               : item.autoRenews ? '자동 갱신' : '—',
             urgent: daysExpiry !== null && daysExpiry <= 14,
           },
@@ -188,10 +188,10 @@ export function DemoItemDetail({ item }: Props) {
       <div>
         <p className="text-sm font-semibold mb-2.5">같은 카테고리 항목</p>
         <div className="flex gap-2 overflow-x-auto pb-1">
-          {require('@/lib/demo-data').DEMO_ITEMS
-            .filter((i: ResponsibilityItem) => i.category === item.category && i.id !== item.id)
+          {DEMO_ITEMS
+            .filter((i) => i.category === item.category && i.id !== item.id)
             .slice(0, 4)
-            .map((related: ResponsibilityItem) => (
+            .map((related) => (
               <Link
                 key={related.id}
                 href={`/demo/items/${related.id}`}
