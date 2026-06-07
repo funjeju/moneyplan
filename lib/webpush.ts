@@ -1,10 +1,16 @@
 import webpush from 'web-push'
 
-webpush.setVapidDetails(
-  process.env.VAPID_SUBJECT!,
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-)
+let initialized = false
+
+function init() {
+  if (initialized) return
+  webpush.setVapidDetails(
+    process.env.VAPID_SUBJECT!,
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+    process.env.VAPID_PRIVATE_KEY!
+  )
+  initialized = true
+}
 
 export interface PushPayload {
   title: string
@@ -14,15 +20,12 @@ export interface PushPayload {
 }
 
 export async function sendPush(subscription: webpush.PushSubscription, payload: PushPayload) {
+  init()
   try {
     await webpush.sendNotification(subscription, JSON.stringify(payload))
     return true
   } catch (err: any) {
-    if (err.statusCode === 410 || err.statusCode === 404) {
-      return 'expired'
-    }
+    if (err.statusCode === 410 || err.statusCode === 404) return 'expired'
     return false
   }
 }
-
-export { webpush }
