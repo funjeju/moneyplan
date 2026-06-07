@@ -5,7 +5,7 @@ const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY!)
 const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
 function buildSystemPrompt(userContext: any): string {
-  return `당신은 Life Responsibility OS의 AI 생활 비서입니다.
+  return `당신은 Life Capsule의 AI 생활 비서입니다.
 사용자의 생활 계약, 구독, 보험, 세금 등을 관리하는 앱의 어시스턴트입니다.
 
 현재 사용자 데이터 요약:

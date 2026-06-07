@@ -47,7 +47,7 @@ export default function LoginPage() {
           <div className="w-12 h-12 bg-[#6C63FF] rounded-2xl flex items-center justify-center mx-auto mb-3">
             <span className="text-white text-xl">✦</span>
           </div>
-          <h1 className="text-xl font-semibold">Life Responsibility OS</h1>
+          <h1 className="text-xl font-semibold">Life Capsule</h1>
           <p className="text-sm text-gray-400 mt-1">생활 책임 관리 플랫폼</p>
         </div>
 

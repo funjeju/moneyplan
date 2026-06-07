@@ -34,7 +34,7 @@ export default function SignupPage() {
       <div className="w-full max-w-sm bg-white rounded-2xl p-8 shadow-md">
         <div className="text-center mb-8">
           <h1 className="text-xl font-semibold">회원가입</h1>
-          <p className="text-sm text-gray-400 mt-1">Life Responsibility OS</p>
+          <p className="text-sm text-gray-400 mt-1">Life Capsule</p>
         </div>
 
         <Button variant="outline" className="w-full mb-4 gap-2" onClick={async () => {

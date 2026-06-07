@@ -59,11 +59,9 @@ export function Sidebar({ className }: Props) {
       {/* 로고 */}
       <div className="p-5 border-b border-gray-100">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-[#6C63FF] rounded-xl flex items-center justify-center">
-            <span className="text-white text-sm">✦</span>
-          </div>
+          <img src="/icons/icon-96x96.png" alt="Life Capsule" className="w-9 h-9 rounded-xl object-cover" />
           <div>
-            <p className="text-sm font-semibold">Life OS</p>
+            <p className="text-sm font-semibold">Life Capsule</p>
             <p className="text-xs text-gray-400">생활 책임 관리</p>
           </div>
         </div>

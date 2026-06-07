@@ -1,7 +1,6 @@
 'use client'
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
+import { LandingPage } from '@/components/landing/LandingPage'
 
 interface Props {
   children: React.ReactNode
@@ -9,13 +8,6 @@ interface Props {
 
 export function AuthGuard({ children }: Props) {
   const { user, isLoading } = useAuth()
-  const router = useRouter()
-
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.replace('/login')
-    }
-  }, [user, isLoading, router])
 
   if (isLoading) {
     return (
@@ -25,7 +17,7 @@ export function AuthGuard({ children }: Props) {
     )
   }
 
-  if (!user) return null
+  if (!user) return <LandingPage />
 
   return <>{children}</>
 }
