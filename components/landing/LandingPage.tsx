@@ -124,12 +124,20 @@ export function LandingPage() {
           구독, 보험, 통신비, 렌탈, 세금까지<br />
           AI가 자동으로 파악하고 납부·만료일을 알려드려요
         </p>
-        <div className="flex gap-3 justify-center">
-          <button onClick={() => router.push('/signup')} className="px-6 py-3 bg-[#6C63FF] text-white rounded-2xl font-semibold text-sm hover:bg-[#5A52E8] transition-colors shadow-lg shadow-[#6C63FF]/30">
-            무료로 시작하기
-          </button>
-          <button onClick={() => router.push('/login')} className="px-6 py-3 bg-white text-gray-700 rounded-2xl font-semibold text-sm border border-gray-200 hover:bg-gray-50 transition-colors">
-            로그인
+        <div className="flex flex-col gap-3 items-center">
+          <div className="flex gap-3">
+            <button onClick={() => router.push('/signup')} className="px-6 py-3 bg-[#6C63FF] text-white rounded-2xl font-semibold text-sm hover:bg-[#5A52E8] transition-colors shadow-lg shadow-[#6C63FF]/30">
+              무료로 시작하기
+            </button>
+            <button onClick={() => router.push('/login')} className="px-6 py-3 bg-white text-gray-700 rounded-2xl font-semibold text-sm border border-gray-200 hover:bg-gray-50 transition-colors">
+              로그인
+            </button>
+          </div>
+          <button
+            onClick={() => router.push('/demo')}
+            className="flex items-center gap-2 px-5 py-2.5 bg-amber-50 text-amber-700 rounded-2xl font-semibold text-sm border border-amber-200 hover:bg-amber-100 transition-colors"
+          >
+            <span>✦</span> 로그인 없이 무료 체험
           </button>
         </div>
         <p className="text-xs text-gray-400 mt-3">👇 아래에서 실제 화면을 미리 볼 수 있어요</p>
@@ -337,9 +345,15 @@ export function LandingPage() {
           </button>
           <button
             onClick={() => router.push('/login')}
-            className="w-full py-2.5 text-white/70 text-sm mt-2 hover:text-white transition-colors"
+            className="w-full py-2 text-white/70 text-sm mt-1 hover:text-white transition-colors"
           >
             이미 계정이 있어요
+          </button>
+          <button
+            onClick={() => router.push('/demo')}
+            className="w-full py-2 text-white/60 text-xs hover:text-white/80 transition-colors"
+          >
+            ✦ 로그인 없이 무료 체험해보기
           </button>
         </div>
       </section>
