@@ -2,13 +2,15 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-  Home, List, CreditCard, AlertTriangle, Settings,
+  Home, List, CreditCard, AlertTriangle, Settings, Bell, BarChart3,
   Smartphone, Zap, Shield, Play, Settings as SettingsIcon,
   Receipt, Car, Building, Landmark, Briefcase,
   MoreHorizontal, ChevronDown,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
+import { useQuery } from '@tanstack/react-query'
+import * as notifDB from '@/lib/firestore/notifications'
 import { useState } from 'react'
 
 const NAV_ITEMS = [
@@ -16,6 +18,8 @@ const NAV_ITEMS = [
   { href: '/items', icon: List, label: '전체 항목' },
   { href: '/cards', icon: CreditCard, label: '카드 관리' },
   { href: '/expiry', icon: AlertTriangle, label: '해지·만료' },
+  { href: '/stats', icon: BarChart3, label: '지출 분석' },
+  { href: '/notifications', icon: Bell, label: '알림' },
   { href: '/settings', icon: Settings, label: '설정' },
 ]
 
@@ -42,6 +46,14 @@ export function Sidebar({ className }: Props) {
   const { user, logout } = useAuth()
   const [showCategories, setShowCategories] = useState(true)
 
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ['notifications-unread', user?.uid],
+    queryFn: () => notifDB.getUnreadCount(user!.uid),
+    enabled: !!user,
+    staleTime: 60_000,
+    refetchInterval: 120_000,
+  })
+
   return (
     <aside className={cn('w-64 flex flex-col h-screen fixed top-0 left-0 bg-white border-r border-gray-100 z-40', className)}>
       {/* 로고 */}
@@ -60,7 +72,7 @@ export function Sidebar({ className }: Props) {
       {/* 네비게이션 */}
       <nav className="flex-1 overflow-y-auto p-3 space-y-0.5">
         {NAV_ITEMS.slice(0, 2).map(item => (
-          <NavLink key={item.href} item={item} active={pathname === item.href} />
+          <NavLink key={item.href} item={item} active={pathname === item.href} badge={item.href === '/notifications' ? unreadCount : 0} />
         ))}
 
         {/* 카테고리 섹션 */}
@@ -78,7 +90,7 @@ export function Sidebar({ className }: Props) {
 
         <div className="pt-2 mt-2 border-t border-gray-100">
           {NAV_ITEMS.slice(2).map(item => (
-            <NavLink key={item.href} item={item} active={pathname === item.href} />
+            <NavLink key={item.href} item={item} active={pathname === item.href} badge={item.href === '/notifications' ? unreadCount : 0} />
           ))}
         </div>
       </nav>
@@ -101,10 +113,11 @@ export function Sidebar({ className }: Props) {
   )
 }
 
-function NavLink({ item, active, small }: {
+function NavLink({ item, active, small, badge = 0 }: {
   item: { href: string; icon: any; label: string }
   active: boolean
   small?: boolean
+  badge?: number
 }) {
   const Icon = item.icon
   return (
@@ -116,7 +129,14 @@ function NavLink({ item, active, small }: {
         active ? 'bg-[#6C63FF]/10 text-[#6C63FF]' : 'text-gray-600 hover:bg-gray-50'
       )}
     >
-      <Icon size={small ? 14 : 16} />
+      <div className="relative">
+        <Icon size={small ? 14 : 16} />
+        {badge > 0 && (
+          <span className="absolute -top-1 -right-1.5 w-3.5 h-3.5 bg-red-500 text-white text-[8px] rounded-full flex items-center justify-center font-bold">
+            {badge > 9 ? '9+' : badge}
+          </span>
+        )}
+      </div>
       <span className={small ? 'text-xs' : 'text-sm'}>{item.label}</span>
     </Link>
   )

@@ -1,11 +1,13 @@
 'use client'
 import { useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { useItems } from '@/hooks/useItems'
 import { getDaysUntilExpiry } from '@/lib/utils'
 import { ItemCard } from '@/components/items/ItemCard'
 import { AlertTriangle, Clock, Calendar, RefreshCw, SkipBack } from 'lucide-react'
 
 export default function ExpiryPage() {
+  const router = useRouter()
   const { items } = useItems()
 
   const groups = useMemo(() => {
@@ -34,6 +36,7 @@ export default function ExpiryPage() {
         subtitle="7일 이내 만료"
         items={groups.critical}
         emptyMsg="긴급 처리 항목이 없어요 ✅"
+        onItemClick={id => router.push(`/items/${id}`)}
       />
 
       <ExpirySection
@@ -42,6 +45,7 @@ export default function ExpiryPage() {
         subtitle="30일 이내 만료"
         items={groups.warning}
         emptyMsg="이번달 만료 항목이 없어요"
+        onItemClick={id => router.push(`/items/${id}`)}
       />
 
       <ExpirySection
@@ -50,6 +54,7 @@ export default function ExpiryPage() {
         subtitle="90일 이내 만료"
         items={groups.notice}
         emptyMsg="3개월 내 만료 항목이 없어요"
+        onItemClick={id => router.push(`/items/${id}`)}
       />
 
       {groups.autoRenew.length > 0 && (
@@ -58,6 +63,7 @@ export default function ExpiryPage() {
           title="⚠️ 자동갱신 주의"
           subtitle="자동갱신 예정 — 해지 원하면 미리 신청하세요"
           items={groups.autoRenew}
+          onItemClick={id => router.push(`/items/${id}`)}
         />
       )}
 
@@ -67,18 +73,20 @@ export default function ExpiryPage() {
           title="이미 만료됨"
           subtitle="처리 또는 보관이 필요한 항목"
           items={groups.expired}
+          onItemClick={id => router.push(`/items/${id}`)}
         />
       )}
     </div>
   )
 }
 
-function ExpirySection({ icon, title, subtitle, items, emptyMsg }: {
+function ExpirySection({ icon, title, subtitle, items, emptyMsg, onItemClick }: {
   icon: React.ReactNode
   title: string
   subtitle: string
   items: any[]
   emptyMsg?: string
+  onItemClick?: (id: string) => void
 }) {
   return (
     <section>
@@ -98,7 +106,7 @@ function ExpirySection({ icon, title, subtitle, items, emptyMsg }: {
         <p className="text-sm text-gray-400 text-center py-4">{emptyMsg}</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {items.map(item => <ItemCard key={item.id} item={item} />)}
+          {items.map(item => <ItemCard key={item.id} item={item} onClick={() => onItemClick?.(item.id)} />)}
         </div>
       )}
     </section>

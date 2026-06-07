@@ -1,14 +1,17 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, List, CreditCard, AlertTriangle, Settings } from 'lucide-react'
+import { Home, List, BarChart3, Bell, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useQuery } from '@tanstack/react-query'
+import { useAuth } from '@/hooks/useAuth'
+import * as notifDB from '@/lib/firestore/notifications'
 
 const TABS = [
   { href: '/', icon: Home, label: '홈' },
   { href: '/items', icon: List, label: '항목' },
-  { href: '/cards', icon: CreditCard, label: '카드' },
-  { href: '/expiry', icon: AlertTriangle, label: '만료' },
+  { href: '/stats', icon: BarChart3, label: '분석' },
+  { href: '/notifications', icon: Bell, label: '알림' },
   { href: '/settings', icon: Settings, label: '설정' },
 ]
 
@@ -18,6 +21,15 @@ interface Props {
 
 export function BottomNav({ className }: Props) {
   const pathname = usePathname()
+  const { user } = useAuth()
+
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ['notifications-unread', user?.uid],
+    queryFn: () => notifDB.getUnreadCount(user!.uid),
+    enabled: !!user,
+    staleTime: 60_000,
+    refetchInterval: 120_000,
+  })
 
   return (
     <nav className={cn('fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-40 pb-safe', className)}>
@@ -25,16 +37,24 @@ export function BottomNav({ className }: Props) {
         {TABS.map(tab => {
           const Icon = tab.icon
           const active = pathname === tab.href
+          const showBadge = tab.href === '/notifications' && unreadCount > 0
           return (
             <Link
               key={tab.href}
               href={tab.href}
               className={cn(
-                'flex-1 flex flex-col items-center gap-1 py-3 transition-colors',
+                'flex-1 flex flex-col items-center gap-1 py-3 transition-colors relative',
                 active ? 'text-[#6C63FF]' : 'text-gray-400'
               )}
             >
-              <Icon size={20} />
+              <div className="relative">
+                <Icon size={20} />
+                {showBadge && (
+                  <span className="absolute -top-1 -right-1.5 w-4 h-4 bg-red-500 text-white text-[9px] rounded-full flex items-center justify-center font-bold">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </div>
               <span className="text-[10px]">{tab.label}</span>
             </Link>
           )

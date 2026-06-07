@@ -1,8 +1,9 @@
 'use client'
 import { useState, useRef } from 'react'
-import { Sparkles, Camera, Plus } from 'lucide-react'
+import { Sparkles, Camera, Plus, MessageCircle } from 'lucide-react'
 import { useAIParse } from '@/hooks/useAIParse'
 import { ParseResultPreview } from './ParseResultPreview'
+import { AIChatPanel } from './AIChatPanel'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ItemForm } from '@/components/items/ItemForm'
 import { useItems } from '@/hooks/useItems'
@@ -11,6 +12,7 @@ export function AIInputBar() {
   const [input, setInput] = useState('')
   const [showPreview, setShowPreview] = useState(false)
   const [showManualForm, setShowManualForm] = useState(false)
+  const [showChat, setShowChat] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const { parseText, parseImage, isLoading, result, reset } = useAIParse()
   const { addItem } = useItems()
@@ -31,6 +33,8 @@ export function AIInputBar() {
 
   return (
     <>
+      {showChat && <AIChatPanel onClose={() => setShowChat(false)} />}
+
       <div className="fixed bottom-16 lg:bottom-0 left-0 right-0 lg:left-64 z-30 bg-white border-t border-gray-100 p-3">
         {showPreview && result && (
           <ParseResultPreview
@@ -72,6 +76,14 @@ export function AIInputBar() {
               onChange={handleImageUpload}
             />
           </div>
+          <button
+            onClick={() => setShowChat(prev => !prev)}
+            className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-colors border ${
+              showChat ? 'bg-[#6C63FF] text-white border-[#6C63FF]' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            <MessageCircle size={17} />
+          </button>
           <button
             onClick={() => setShowManualForm(true)}
             className="w-10 h-10 bg-[#6C63FF] rounded-full flex items-center justify-center text-white flex-shrink-0 hover:bg-[#5A52E8] transition-colors"

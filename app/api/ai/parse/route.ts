@@ -1,7 +1,8 @@
-import Anthropic from '@anthropic-ai/sdk'
+import { GoogleGenerativeAI } from '@google/generative-ai'
 import { NextRequest, NextResponse } from 'next/server'
 
-const client = new Anthropic()
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY!)
+const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
 const PARSE_SYSTEM_PROMPT = `당신은 생활 재정 책임 관리 앱의 AI 파싱 엔진입니다.
 사용자 입력에서 정기 지출, 계약, 구독, 보험, 세금 등의 항목을 추출합니다.
@@ -20,7 +21,7 @@ const PARSE_SYSTEM_PROMPT = `당신은 생활 재정 책임 관리 앱의 AI 파
 - business: 도메인, 서버, 클라우드, SaaS, 임대료
 - other: 위 카테고리에 해당하지 않는 것
 
-응답 형식: 순수 JSON만. 마크다운, 설명 텍스트 없이.
+응답 형식: 순수 JSON만. 마크다운 코드블록 없이, 설명 텍스트 없이 JSON만 출력.
 {
   "items": [
     {
@@ -46,38 +47,21 @@ export async function POST(req: NextRequest) {
   try {
     const { type, content } = await req.json()
 
-    const messages: Anthropic.MessageParam[] = type === 'image'
-      ? [{
-          role: 'user',
-          content: [
-            {
-              type: 'image',
-              source: { type: 'base64', media_type: 'image/jpeg', data: content },
-            },
-            {
-              type: 'text',
-              text: '이 이미지에서 정기 지출/계약 항목을 추출해주세요.',
-            },
-          ],
-        }]
-      : [{
-          role: 'user',
-          content: `다음 텍스트에서 정기 지출/계약 항목들을 추출해주세요:\n\n${content}`,
-        }]
+    let prompt: string
+    let imagePart: any = null
 
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 2000,
-      system: PARSE_SYSTEM_PROMPT,
-      messages,
-    })
+    if (type === 'image') {
+      prompt = '이 이미지에서 정기 지출/계약 항목을 추출해주세요.\n\n' + PARSE_SYSTEM_PROMPT
+      imagePart = {
+        inlineData: { data: content, mimeType: 'image/jpeg' },
+      }
+    } else {
+      prompt = `${PARSE_SYSTEM_PROMPT}\n\n다음 텍스트에서 정기 지출/계약 항목들을 추출해주세요:\n\n${content}`
+    }
 
-    const raw = response.content
-      .filter(b => b.type === 'text')
-      .map(b => (b as any).text)
-      .join('')
-      .replace(/```json|```/g, '')
-      .trim()
+    const parts = imagePart ? [imagePart, { text: prompt }] : [{ text: prompt }]
+    const result = await model.generateContent(parts)
+    const raw = result.response.text().replace(/```json|```/g, '').trim()
 
     const parsed = JSON.parse(raw)
     return NextResponse.json(parsed)

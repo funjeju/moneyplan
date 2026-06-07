@@ -1,6 +1,6 @@
 'use client'
 import { useMemo } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { useItems } from '@/hooks/useItems'
 import { CATEGORY_META } from '@/lib/utils/category'
 import { toMonthlyAmount, toYearlyAmount, fmtMoney } from '@/lib/utils'
@@ -9,6 +9,7 @@ import type { CategorySlug } from '@/lib/types'
 
 export default function CategoryPage() {
   const { slug } = useParams<{ slug: CategorySlug }>()
+  const router = useRouter()
   const meta = CATEGORY_META[slug]
   const { items } = useItems(slug)
 
@@ -60,7 +61,7 @@ export default function CategoryPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {items.map(item => <ItemCard key={item.id} item={item} />)}
+        {items.map(item => <ItemCard key={item.id} item={item} onClick={() => router.push(`/items/${item.id}`)} />)}
       </div>
 
       {items.length === 0 && (

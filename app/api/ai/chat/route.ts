@@ -1,9 +1,10 @@
-import Anthropic from '@anthropic-ai/sdk'
+import { GoogleGenerativeAI } from '@google/generative-ai'
 import { NextRequest, NextResponse } from 'next/server'
 
-const client = new Anthropic()
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY!)
+const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
-function buildChatSystemPrompt(userContext: any): string {
+function buildSystemPrompt(userContext: any): string {
   return `당신은 Life Responsibility OS의 AI 생활 비서입니다.
 사용자의 생활 계약, 구독, 보험, 세금 등을 관리하는 앱의 어시스턴트입니다.
 
@@ -23,7 +24,7 @@ ${(userContext.items ?? []).map((i: any) =>
 2. 항목 추가/수정이 필요하면 action 필드에 명시
 3. 복잡한 데이터는 구조화해서 제시
 
-응답 JSON 형식:
+응답 형식: 순수 JSON만. 코드블록 없이 JSON만 출력.
 {
   "message": "사용자에게 보여줄 텍스트",
   "action": null,
@@ -35,19 +36,23 @@ export async function POST(req: NextRequest) {
   try {
     const { messages, userContext } = await req.json()
 
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1000,
-      system: buildChatSystemPrompt(userContext),
-      messages,
+    const systemPrompt = buildSystemPrompt(userContext)
+    const history = (messages as Array<{ role: string; content: string }>).slice(0, -1)
+    const lastMessage = messages[messages.length - 1]
+
+    const chat = model.startChat({
+      history: [
+        { role: 'user', parts: [{ text: systemPrompt }] },
+        { role: 'model', parts: [{ text: '네, 이해했습니다. 사용자 질문에 JSON 형식으로 답변하겠습니다.' }] },
+        ...history.map((m: { role: string; content: string }) => ({
+          role: m.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: m.content }],
+        })),
+      ],
     })
 
-    const raw = response.content
-      .filter(b => b.type === 'text')
-      .map(b => (b as any).text)
-      .join('')
-      .replace(/```json|```/g, '')
-      .trim()
+    const result = await chat.sendMessage(lastMessage.content)
+    const raw = result.response.text().replace(/```json|```/g, '').trim()
 
     const parsed = JSON.parse(raw)
     return NextResponse.json(parsed)
