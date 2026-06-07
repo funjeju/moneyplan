@@ -1,5 +1,5 @@
 'use client'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { DEMO_ITEMS } from '@/lib/demo-data'
 import { ItemCard } from '@/components/items/ItemCard'
@@ -23,6 +23,10 @@ export function DemoItemsPage() {
   const [sort, setSort] = useState('payment')
   const [search, setSearch] = useState('')
   const [filterCategory, setFilterCategory] = useState<CategorySlug | ''>(initialCat)
+
+  useEffect(() => {
+    setFilterCategory((searchParams.get('category') ?? '') as CategorySlug | '')
+  }, [searchParams])
 
   const categories = useMemo(() => {
     const used = new Set(DEMO_ITEMS.map(i => i.category))
