@@ -1,0 +1,37 @@
+import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, query, orderBy, Timestamp } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
+import type { CreditCard } from '@/lib/types'
+
+const cardsRef = (userId: string) => collection(db, `users/${userId}/cards`)
+const cardRef = (userId: string, cardId: string) => doc(db, `users/${userId}/cards/${cardId}`)
+
+export async function getCards(userId: string): Promise<CreditCard[]> {
+  const q = query(cardsRef(userId), orderBy('isPrimary', 'desc'))
+  const snapshot = await getDocs(q)
+  return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as CreditCard))
+}
+
+export async function addCard(
+  userId: string,
+  data: Omit<CreditCard, 'id' | 'userId' | 'createdAt'>
+): Promise<string> {
+  const ref = await addDoc(cardsRef(userId), {
+    ...data,
+    userId,
+    isActive: true,
+    createdAt: Timestamp.now(),
+  })
+  return ref.id
+}
+
+export async function updateCard(
+  userId: string,
+  cardId: string,
+  data: Partial<CreditCard>
+): Promise<void> {
+  await updateDoc(cardRef(userId, cardId), data)
+}
+
+export async function deleteCard(userId: string, cardId: string): Promise<void> {
+  await deleteDoc(cardRef(userId, cardId))
+}

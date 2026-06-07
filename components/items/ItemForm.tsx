@@ -1,0 +1,180 @@
+'use client'
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { CATEGORY_META } from '@/lib/utils/category'
+import type { ResponsibilityItem, CategorySlug, PaymentCycle } from '@/lib/types'
+
+interface Props {
+  initialData?: Partial<ResponsibilityItem>
+  onSave: (data: Partial<ResponsibilityItem>) => void
+  onCancel: () => void
+}
+
+const CYCLE_OPTIONS: { value: PaymentCycle; label: string }[] = [
+  { value: 'monthly', label: '매월' },
+  { value: 'bimonthly', label: '2개월' },
+  { value: 'quarterly', label: '분기(3개월)' },
+  { value: 'semiannual', label: '반기(6개월)' },
+  { value: 'yearly', label: '매년' },
+  { value: 'once', label: '일회성' },
+]
+
+export function ItemForm({ initialData, onSave, onCancel }: Props) {
+  const [name, setName] = useState(initialData?.name ?? '')
+  const [category, setCategory] = useState<CategorySlug>(initialData?.category ?? 'subscription')
+  const [amount, setAmount] = useState(initialData?.amount?.toString() ?? '')
+  const [cycle, setCycle] = useState<PaymentCycle>(initialData?.cycle ?? 'monthly')
+  const [dayOfMonth, setDayOfMonth] = useState(initialData?.dayOfMonth?.toString() ?? '')
+  const [provider, setProvider] = useState(initialData?.provider ?? '')
+  const [paymentMethod, setPaymentMethod] = useState(initialData?.paymentMethod ?? '')
+  const [contractEndDate, setContractEndDate] = useState('')
+  const [autoRenews, setAutoRenews] = useState(initialData?.autoRenews ?? false)
+  const [isAutoPayment, setIsAutoPayment] = useState(initialData?.isAutoPayment ?? false)
+  const [memo, setMemo] = useState(initialData?.memo ?? '')
+  const [owner, setOwner] = useState(initialData?.owner ?? '')
+
+  const handleSave = () => {
+    if (!name || !amount) return
+    const data: Partial<ResponsibilityItem> = {
+      name,
+      category,
+      amount: Number(amount),
+      cycle,
+      provider,
+      paymentMethod: paymentMethod || undefined,
+      dayOfMonth: dayOfMonth ? Number(dayOfMonth) : undefined,
+      autoRenews,
+      isAutoPayment,
+      memo: memo || undefined,
+      owner: owner || undefined,
+      status: 'active',
+      aiParsed: false,
+    }
+    if (contractEndDate) {
+      data.contractEndDate = new Date(contractEndDate) as any
+    }
+    onSave(data)
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="text-xs text-gray-500 mb-1 block">항목명 *</label>
+        <Input value={name} onChange={e => setName(e.target.value)} placeholder="넷플릭스, KT 인터넷 등" />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">카테고리 *</label>
+          <Select value={category} onValueChange={(v) => v && setCategory(v as CategorySlug)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(CATEGORY_META).map(([slug, meta]) => (
+                <SelectItem key={slug} value={slug}>{meta.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">결제 주기 *</label>
+          <Select value={cycle} onValueChange={(v) => v && setCycle(v as PaymentCycle)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {CYCLE_OPTIONS.map(opt => (
+                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">금액 (원) *</label>
+          <Input
+            type="number"
+            value={amount}
+            onChange={e => setAmount(e.target.value)}
+            placeholder="29900"
+          />
+        </div>
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">납부일 (매월 N일)</label>
+          <Input
+            type="number"
+            min={1}
+            max={31}
+            value={dayOfMonth}
+            onChange={e => setDayOfMonth(e.target.value)}
+            placeholder="25"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">공급업체</label>
+          <Input value={provider} onChange={e => setProvider(e.target.value)} placeholder="KT, 넷플릭스 등" />
+        </div>
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">결제 수단</label>
+          <Input value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} placeholder="신한카드 등" />
+        </div>
+      </div>
+
+      <div>
+        <label className="text-xs text-gray-500 mb-1 block">약정/계약 종료일</label>
+        <Input
+          type="date"
+          value={contractEndDate}
+          onChange={e => setContractEndDate(e.target.value)}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">명의자</label>
+          <Input value={owner} onChange={e => setOwner(e.target.value)} placeholder="홍길동" />
+        </div>
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">메모</label>
+          <Input value={memo} onChange={e => setMemo(e.target.value)} placeholder="자유 메모" />
+        </div>
+      </div>
+
+      <div className="flex gap-4">
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            checked={autoRenews}
+            onChange={e => setAutoRenews(e.target.checked)}
+            className="rounded"
+          />
+          자동갱신
+        </label>
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            checked={isAutoPayment}
+            onChange={e => setIsAutoPayment(e.target.checked)}
+            className="rounded"
+          />
+          자동이체
+        </label>
+      </div>
+
+      <div className="flex gap-2 pt-2">
+        <Button variant="outline" onClick={onCancel} className="flex-1">취소</Button>
+        <Button onClick={handleSave} className="flex-1" disabled={!name || !amount}>
+          저장
+        </Button>
+      </div>
+    </div>
+  )
+}
