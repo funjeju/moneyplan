@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-  Home, List, BarChart3, Bell, Settings,
+  Home, List, BarChart3, Bell, Settings, CreditCard, AlertTriangle,
   Smartphone, Zap, Shield, Play, Settings as SettingsIcon,
   Receipt, Car, Building, Landmark, Briefcase, MoreHorizontal, ChevronDown,
 } from 'lucide-react'
@@ -12,8 +12,10 @@ import { useState } from 'react'
 const NAV_ITEMS = [
   { href: '/demo', icon: Home, label: '홈' },
   { href: '/demo/items', icon: List, label: '전체 항목' },
+  { href: '/demo/cards', icon: CreditCard, label: '카드 관리' },
+  { href: '/demo/expiry', icon: AlertTriangle, label: '해지·만료' },
   { href: '/demo/stats', icon: BarChart3, label: '지출 분석' },
-  { href: '/demo/chat', icon: Bell, label: 'AI 챗봇' },
+  { href: '/demo/notifications', icon: Bell, label: '알림' },
 ]
 
 const CATEGORY_LINKS = [

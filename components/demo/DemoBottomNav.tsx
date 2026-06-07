@@ -1,14 +1,15 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, List, BarChart3, MessageCircle, Settings } from 'lucide-react'
+import { Home, List, BarChart3, Bell, CreditCard } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const TABS = [
   { href: '/demo', icon: Home, label: '홈' },
   { href: '/demo/items', icon: List, label: '항목' },
   { href: '/demo/stats', icon: BarChart3, label: '분석' },
-  { href: '/demo/chat', icon: MessageCircle, label: 'AI챗봇' },
+  { href: '/demo/notifications', icon: Bell, label: '알림' },
+  { href: '/demo/cards', icon: CreditCard, label: '카드' },
 ]
 
 export function DemoBottomNav({ className }: { className?: string }) {

@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { DemoPreviewModal } from '@/components/demo/DemoPreviewModal'
 import { DEMO_ITEMS, DEMO_CARDS, DEMO_CHAT } from '@/lib/demo-data'
 import { CATEGORY_META } from '@/lib/utils/category'
 import { fmtMoney, toMonthlyAmount, getDaysUntilExpiry, getDaysUntilPayment } from '@/lib/utils'
@@ -85,6 +86,7 @@ function DemoChatBubble({ msg, delay }: { msg: { role: string; content: string }
 export function LandingPage() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<'dashboard' | 'items' | 'chat'>('dashboard')
+  const [showPreview, setShowPreview] = useState(false)
   const chatRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -95,6 +97,7 @@ export function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[#F8F9FC]">
+      <DemoPreviewModal open={showPreview} onClose={() => setShowPreview(false)} />
       {/* 헤더 */}
       <header className="sticky top-0 z-40 bg-white/80 backdrop-blur border-b border-gray-100 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
@@ -164,9 +167,17 @@ export function LandingPage() {
 
       {/* 샘플 화면 탭 */}
       <section className="px-4 max-w-lg mx-auto mb-8">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-xs font-bold text-[#6C63FF] bg-[#6C63FF]/10 px-2 py-0.5 rounded-full">SAMPLE</span>
-          <p className="text-sm font-semibold">실제 화면 미리보기</p>
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-[#6C63FF] bg-[#6C63FF]/10 px-2 py-0.5 rounded-full">SAMPLE</span>
+            <p className="text-sm font-semibold">실제 화면 미리보기</p>
+          </div>
+          <button
+            onClick={() => setShowPreview(true)}
+            className="text-xs text-[#6C63FF] bg-[#6C63FF]/10 px-3 py-1.5 rounded-full font-medium hover:bg-[#6C63FF]/20 transition-colors"
+          >
+            빠른 미리보기 ↗
+          </button>
         </div>
         <p className="text-xs text-gray-400 mb-4">샘플 데이터로 구성된 화면입니다</p>
 

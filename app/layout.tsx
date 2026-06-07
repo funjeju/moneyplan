@@ -30,13 +30,13 @@ export const metadata: Metadata = {
     siteName: 'Life Capsule',
     title: 'Life Capsule — AI 생활비 관리 앱',
     description: '구독·보험·통신비·렌탈·세금을 한 곳에서. AI가 자동 파악하고 만료·납부일 미리 알림.',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'Life Capsule' }],
+    images: [{ url: '/icons/icon-512x512.png', width: 512, height: 512, alt: 'Life Capsule' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Life Capsule — AI 생활비 관리 앱',
     description: '구독·보험·통신비·렌탈·세금을 한 곳에서. AI가 자동 파악하고 만료·납부일 미리 알림.',
-    images: ['/og-image.png'],
+    images: ['/icons/icon-512x512.png'],
   },
   manifest: '/manifest.json',
   appleWebApp: {
