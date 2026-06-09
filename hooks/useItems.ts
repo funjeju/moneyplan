@@ -29,7 +29,10 @@ export function useItems(category?: string) {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<ResponsibilityItem> }) =>
       itemsDB.updateItem(user!.uid, id, data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['items', user?.uid] }),
+    onSuccess: (_, { id }) => {
+      qc.invalidateQueries({ queryKey: ['items', user?.uid] })
+      qc.invalidateQueries({ queryKey: ['item', id] })
+    },
   })
 
   const deleteMutation = useMutation({
