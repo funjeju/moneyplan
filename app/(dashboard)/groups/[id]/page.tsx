@@ -11,7 +11,7 @@ import { CATEGORY_META } from '@/lib/utils/category'
 import { fmtMoney, toMonthlyAmount } from '@/lib/utils'
 import { CategoryBadge } from '@/components/shared/CategoryBadge'
 import { ItemCard } from '@/components/items/ItemCard'
-import { ItemForm } from '@/components/items/ItemForm'
+import { GroupItemForm } from '@/components/items/GroupItemForm'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Plus, Pencil, Trash2 } from 'lucide-react'
@@ -167,21 +167,31 @@ export default function GroupDetailPage() {
       ) : (
         <div className="space-y-3">
           {items.map(item => (
-            <ItemCard
-              key={item.id}
-              item={item}
-              onClick={() => router.push(`/items/${item.id}`)}
-            />
+            <div key={item.id} className="relative">
+              <div className="absolute -top-2 left-3 z-10">
+                <span className="text-[10px] bg-[#6C63FF]/10 text-[#6C63FF] px-2 py-0.5 rounded-full font-medium">
+                  {group.name}
+                </span>
+              </div>
+              <ItemCard
+                item={item}
+                onClick={() => router.push(`/items/${item.id}`)}
+              />
+            </div>
           ))}
         </div>
       )}
 
       {/* 항목 추가 다이얼로그 */}
       <Dialog open={showAddItem} onOpenChange={setShowAddItem}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>항목 추가</DialogTitle></DialogHeader>
-          <ItemForm
-            initialData={{ category: group.category, provider: group.provider, cycle: 'monthly' }}
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>항목 추가</DialogTitle>
+            <p className="text-xs text-gray-400 mt-0.5">{group.name} 그룹에 종속</p>
+          </DialogHeader>
+          <GroupItemForm
+            groupCategory={group.category}
+            groupProvider={group.provider}
             onSave={handleAddItem}
             onCancel={() => setShowAddItem(false)}
           />
