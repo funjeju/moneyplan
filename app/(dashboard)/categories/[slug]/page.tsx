@@ -1,18 +1,48 @@
 'use client'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core'
 import { useItems } from '@/hooks/useItems'
+import { useGroups } from '@/hooks/useGroups'
 import { CATEGORY_META } from '@/lib/utils/category'
 import { toMonthlyAmount, toYearlyAmount, fmtMoney } from '@/lib/utils'
 import { ItemCard } from '@/components/items/ItemCard'
-import type { CategorySlug } from '@/lib/types'
+import { DraggableItemCard } from '@/components/items/DraggableItemCard'
+import { DroppableGroupCard } from '@/components/items/DroppableGroupCard'
+import type { CategorySlug, ResponsibilityItem } from '@/lib/types'
 
 export default function CategoryPage() {
   const { slug } = useParams<{ slug: CategorySlug }>()
   const router = useRouter()
   const meta = CATEGORY_META[slug]
-  const { items } = useItems(slug)
+  const { items, updateItem } = useItems(slug)
+  const { groups } = useGroups()
+  const [draggingItem, setDraggingItem] = useState<ResponsibilityItem | null>(null)
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  )
+
+  // 이 카테고리에 속하는 그룹만 필터
+  const categoryGroups = useMemo(
+    () => groups.filter(g => g.category === slug),
+    [groups, slug]
+  )
+
+  const groupedItems = useMemo(() => {
+    const map: Record<string, ResponsibilityItem[]> = {}
+    items.forEach(item => {
+      if (item.groupId) {
+        if (!map[item.groupId]) map[item.groupId] = []
+        map[item.groupId].push(item)
+      }
+    })
+    return map
+  }, [items])
+
+  const ungroupedItems = useMemo(() => items.filter(i => !i.groupId), [items])
+
+  // stats는 전체 items 기준
   const stats = useMemo(() => ({
     count: items.length,
     monthlyTotal: items.reduce((s, i) => s + toMonthlyAmount(i), 0),
@@ -26,14 +56,27 @@ export default function CategoryPage() {
     }).length,
   }), [items])
 
+  const handleDragStart = (event: DragStartEvent) => {
+    const item = items.find(i => i.id === event.active.id)
+    setDraggingItem(item ?? null)
+  }
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    setDraggingItem(null)
+    const { active, over } = event
+    if (!over) return
+    const groupId = (over.data.current as any)?.groupId
+    if (!groupId) return
+    const item = items.find(i => i.id === active.id)
+    if (!item || item.groupId === groupId) return
+    updateItem({ id: item.id, data: { groupId } })
+  }
+
   if (!meta) return <div className="p-4">카테고리를 찾을 수 없습니다</div>
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
-      <div
-        className="rounded-2xl p-6 mb-6"
-        style={{ background: meta.color }}
-      >
+      <div className="rounded-2xl p-6 mb-6" style={{ background: meta.color }}>
         <p className="text-sm font-medium mb-1" style={{ color: meta.textColor }}>
           {meta.label}
         </p>
@@ -60,16 +103,38 @@ export default function CategoryPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {items.map(item => <ItemCard key={item.id} item={item} onClick={() => router.push(`/items/${item.id}`)} />)}
-      </div>
-
-      {items.length === 0 && (
+      {items.length === 0 ? (
         <div className="text-center py-16 text-gray-400">
           <div className="text-4xl mb-3">📭</div>
           <p className="text-sm">{meta.label} 항목이 없어요</p>
           <p className="text-xs mt-1">AI에게 말하거나 직접 추가해보세요</p>
         </div>
+      ) : (
+        <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+          {ungroupedItems.length > 0 && categoryGroups.length > 0 && (
+            <p className="text-xs text-gray-400 mb-2">항목을 길게 누른 후 그룹 카드 위로 드래그해서 추가하세요</p>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {categoryGroups.map(group => (
+              <DroppableGroupCard
+                key={group.id}
+                group={group}
+                items={groupedItems[group.id] ?? []}
+                onClick={() => router.push(`/groups/${group.id}`)}
+              />
+            ))}
+            {ungroupedItems.map(item => (
+              <DraggableItemCard key={item.id} item={item} onClick={() => router.push(`/items/${item.id}`)} />
+            ))}
+          </div>
+          <DragOverlay>
+            {draggingItem && (
+              <div className="opacity-90 rotate-2 scale-105">
+                <ItemCard item={draggingItem} />
+              </div>
+            )}
+          </DragOverlay>
+        </DndContext>
       )}
     </div>
   )
