@@ -55,12 +55,24 @@ export async function getExpiringItems(userId: string): Promise<ResponsibilityIt
   return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as ResponsibilityItem))
 }
 
+function cleanUndefined(obj: any): any {
+  if (Array.isArray(obj)) return obj.map(cleanUndefined)
+  if (obj && typeof obj === 'object' && !(obj instanceof Date) && !obj.toDate) {
+    return Object.fromEntries(
+      Object.entries(obj)
+        .filter(([, v]) => v !== undefined)
+        .map(([k, v]) => [k, cleanUndefined(v)])
+    )
+  }
+  return obj
+}
+
 export async function addItem(
   userId: string,
   data: Omit<ResponsibilityItem, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
 ): Promise<string> {
   const now = Timestamp.now()
-  const ref = await addDoc(itemsRef(userId), {
+  const ref = await addDoc(itemsRef(userId), cleanUndefined({
     ...data,
     userId,
     status: data.status ?? 'active',
@@ -68,7 +80,7 @@ export async function addItem(
     aiParsed: data.aiParsed ?? false,
     createdAt: now,
     updatedAt: now,
-  })
+  }))
   return ref.id
 }
 
@@ -99,10 +111,10 @@ export async function updateItem(
   itemId: string,
   data: Partial<ResponsibilityItem>
 ): Promise<void> {
-  await updateDoc(itemRef(userId, itemId), {
+  await updateDoc(itemRef(userId, itemId), cleanUndefined({
     ...data,
     updatedAt: Timestamp.now(),
-  })
+  }))
 }
 
 export async function archiveItem(userId: string, itemId: string): Promise<void> {

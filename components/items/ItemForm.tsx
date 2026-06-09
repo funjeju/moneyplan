@@ -165,7 +165,13 @@ export function ItemForm({ initialData, onSave, onCancel }: Props) {
               else { setPaymentCardId(v); setPaymentMethod('') }
             }}>
               <SelectTrigger>
-                <SelectValue placeholder="카드 선택" />
+                <SelectValue>
+                  {paymentCardId
+                    ? (cards.find(c => c.id === paymentCardId)
+                        ? `${cards.find(c => c.id === paymentCardId)!.name}${cards.find(c => c.id === paymentCardId)!.last4Digits ? ` (${cards.find(c => c.id === paymentCardId)!.last4Digits})` : ''}`
+                        : '카드 선택')
+                    : '직접 입력'}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {cards.map(c => (
