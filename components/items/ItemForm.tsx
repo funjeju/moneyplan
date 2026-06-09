@@ -150,7 +150,7 @@ export function ItemForm({ initialData, onSave, onCancel }: Props) {
       {groups.length > 0 && (
         <div>
           <label className="text-xs text-gray-500 mb-1 block">그룹</label>
-          <Select value={groupId || '__none__'} onValueChange={v => setGroupId(v === '__none__' ? '' : v)}>
+          <Select value={groupId || '__none__'} onValueChange={v => setGroupId(v === '__none__' ? '' : (v ?? ''))}>
             <SelectTrigger>
               <SelectValue placeholder="그룹 없음" />
             </SelectTrigger>
