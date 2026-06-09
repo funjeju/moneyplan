@@ -16,12 +16,11 @@ export async function addCard(
   userId: string,
   data: Omit<CreditCard, 'id' | 'userId' | 'createdAt'>
 ): Promise<string> {
-  const ref = await addDoc(cardsRef(userId), {
-    ...data,
-    userId,
-    isActive: true,
-    createdAt: Timestamp.now(),
-  })
+  const clean = Object.fromEntries(
+    Object.entries({ ...data, userId, isActive: true, createdAt: Timestamp.now() })
+      .filter(([, v]) => v !== undefined)
+  )
+  const ref = await addDoc(cardsRef(userId), clean)
   return ref.id
 }
 
