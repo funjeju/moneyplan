@@ -4,9 +4,14 @@ import { NextRequest, NextResponse } from 'next/server'
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 const PARSE_SYSTEM_PROMPT = `당신은 생활 재정 책임 관리 앱의 AI 파싱 엔진입니다.
-사용자 입력에서 정기 지출, 계약, 구독, 보험, 세금, 과태료, 고지서 등 모든 납부 항목을 추출합니다.
-이미지가 고지서, 청구서, 영수증, 과태료 통지서인 경우에도 납부 금액과 기한을 반드시 추출하세요.
-이미지가 회전되어 있어도 텍스트를 최대한 인식하세요.
+사용자가 제공한 이미지와 텍스트를 모두 종합하여 정기 지출, 계약, 구독, 보험, 세금, 과태료, 고지서 등 납부 항목을 추출합니다.
+
+[중요 규칙]
+1. 이미지와 텍스트를 반드시 함께 분석하세요. 사용자가 텍스트로 명시한 금액이나 정보는 최우선으로 신뢰하세요.
+2. 소계, 합계, 총액, 최종 청구액 등 합산 금액을 개별 항목 금액으로 혼동하지 마세요.
+3. 개별 항목 금액을 추출할 때 반드시 검산하세요: 개별 항목들의 합이 소계와 일치하는지 확인.
+4. 할인/감면 금액은 항목 금액에서 제외하고 원래 금액을 기록하세요.
+5. 이미지가 회전되어 있어도 텍스트를 최대한 인식하세요.
 
 카테고리 분류 기준:
 - telecom: 휴대폰, 인터넷, IPTV, 알뜰폰, 통신 관련
@@ -60,14 +65,15 @@ export async function POST(req: NextRequest) {
       textContent = body.content
     }
 
-    const userText = textContent ? `사용자 부연설명: ${textContent}\n\n` : ''
-
     const contentParts: OpenAI.Chat.ChatCompletionContentPart[] = []
 
     if (imageList.length > 0) {
+      const userNote = textContent
+        ? `[사용자 텍스트 - 이미지보다 우선 신뢰]\n${textContent}\n\n`
+        : ''
       contentParts.push({
         type: 'text',
-        text: `${userText}이 이미지(들)에서 정기 지출/계약 항목을 추출해주세요.\n\n${PARSE_SYSTEM_PROMPT}`,
+        text: `${userNote}아래 이미지(들)와 위 텍스트를 종합해서 납부 항목을 추출해주세요.\n\n${PARSE_SYSTEM_PROMPT}`,
       })
       for (const img of imageList) {
         contentParts.push({
@@ -78,12 +84,12 @@ export async function POST(req: NextRequest) {
     } else {
       contentParts.push({
         type: 'text',
-        text: `${PARSE_SYSTEM_PROMPT}\n\n다음 텍스트에서 정기 지출/계약 항목들을 추출해주세요:\n\n${textContent}`,
+        text: `${PARSE_SYSTEM_PROMPT}\n\n다음 텍스트에서 납부 항목을 추출해주세요:\n\n${textContent}`,
       })
     }
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4o',
       messages: [{ role: 'user', content: contentParts }],
       max_tokens: 2000,
       temperature: 0.1,
