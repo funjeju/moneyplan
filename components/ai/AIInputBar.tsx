@@ -65,7 +65,7 @@ export function AIInputBar() {
     const combined = [
       input.trim() ? `[원본 요청]\n${input.trim()}` : '',
       questions.length > 0 ? `[AI 질문]\n${questions.join('\n')}` : '',
-      `[사용자 답변]\n${followUpAnswer}`,
+      `[사용자 답변 - 이 답변을 반영해 최종 결과를 확정하세요. 추가 질문 없이 followUpQuestions는 빈 배열로 반환하세요]\n${followUpAnswer}`,
     ].filter(Boolean).join('\n\n')
     const res = await parseMixed({ text: combined, files: attachments })
     if (res) setShowPreview(true)

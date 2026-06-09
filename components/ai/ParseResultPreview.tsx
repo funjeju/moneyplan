@@ -39,6 +39,7 @@ export function ParseResultPreview({ result, sourceImages, onConfirm, onClose, o
   const [saving, setSaving] = useState(false)
   const [followUpAnswer, setFollowUpAnswer] = useState('')
   const [reparsing, setReparsing] = useState(false)
+  const [answered, setAnswered] = useState(false)
 
   if (items.length === 0) {
     return (
@@ -98,6 +99,7 @@ export function ParseResultPreview({ result, sourceImages, onConfirm, onClose, o
     try {
       await onReparse(followUpAnswer.trim())
       setFollowUpAnswer('')
+      setAnswered(true)
     } finally {
       setReparsing(false)
     }
@@ -125,7 +127,7 @@ export function ParseResultPreview({ result, sourceImages, onConfirm, onClose, o
           </button>
         </div>
 
-        {followUpQuestions.length > 0 && (
+        {followUpQuestions.length > 0 && !answered && (
           <div className="mx-4 mb-3 p-3 bg-[#6C63FF]/5 rounded-xl space-y-2">
             <p className="text-xs text-[#6C63FF] font-medium">💡 AI 추가 질문</p>
             {followUpQuestions.map((q, i) => (
