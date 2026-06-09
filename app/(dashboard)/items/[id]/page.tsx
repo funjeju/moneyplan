@@ -111,7 +111,9 @@ export default function ItemDetailPage() {
 
         <div className="flex items-end justify-between">
           <div>
-            <p className="text-2xl font-bold tabular-nums">{fmtMoney(item.amount)}</p>
+            <p className={`text-2xl font-bold tabular-nums ${item.amount < 0 ? 'text-blue-500' : ''}`}>
+              {fmtMoney(item.amount)}
+            </p>
             <p className="text-sm text-gray-400">{CYCLE_LABELS[item.cycle]}</p>
           </div>
           <div className="text-right">

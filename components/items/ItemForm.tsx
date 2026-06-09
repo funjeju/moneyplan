@@ -137,15 +137,20 @@ export function ItemForm({ initialData, onSave, onCancel }: Props) {
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="text-xs text-gray-500 mb-1 block">명의자</label>
-          <Input value={owner} onChange={e => setOwner(e.target.value)} placeholder="홍길동" />
-        </div>
-        <div>
-          <label className="text-xs text-gray-500 mb-1 block">메모</label>
-          <Input value={memo} onChange={e => setMemo(e.target.value)} placeholder="자유 메모" />
-        </div>
+      <div>
+        <label className="text-xs text-gray-500 mb-1 block">명의자</label>
+        <Input value={owner} onChange={e => setOwner(e.target.value)} placeholder="홍길동" />
+      </div>
+
+      <div>
+        <label className="text-xs text-gray-500 mb-1 block">메모</label>
+        <textarea
+          value={memo}
+          onChange={e => setMemo(e.target.value)}
+          placeholder="할인 내역, 계약 조건 등 자유 메모"
+          rows={3}
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+        />
       </div>
 
       <div className="flex gap-4">

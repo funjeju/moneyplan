@@ -76,7 +76,9 @@ export function ItemCard({ item, onClick }: Props) {
       </div>
 
       <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-        <span className="text-base font-semibold tabular-nums">{fmtMoney(item.amount)}</span>
+        <span className={`text-base font-semibold tabular-nums ${item.amount < 0 ? 'text-blue-500' : ''}`}>
+          {fmtMoney(item.amount)}
+        </span>
         <DayBadge days={daysUntilPayment} type="payment" />
       </div>
     </div>

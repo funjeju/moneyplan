@@ -1,7 +1,9 @@
 import type { ResponsibilityItem } from '@/lib/types'
 
 export function fmtMoney(n: number): string {
-  return n.toLocaleString('ko-KR') + '원'
+  const abs = Math.abs(n)
+  const str = abs.toLocaleString('ko-KR') + '원'
+  return n < 0 ? `-${str}` : str
 }
 
 export function fmtDate(ts: any): string {
