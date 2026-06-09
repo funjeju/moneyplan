@@ -26,6 +26,8 @@ export function ParseResultPreview({ result, onConfirm, onClose }: Props) {
   const [selected, setSelected] = useState<boolean[]>(items.map(() => true))
   const [drafts, setDrafts] = useState<Partial<ResponsibilityItem>[]>(items)
   const [editingIdx, setEditingIdx] = useState<number | null>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
 
   if (items.length === 0) {
     return (
@@ -39,9 +41,17 @@ export function ParseResultPreview({ result, onConfirm, onClose }: Props) {
   }
 
   const handleAddSelected = async () => {
-    const toAdd = drafts.filter((_, i) => selected[i])
-    await addItems(toAdd)
-    onConfirm()
+    setSaving(true)
+    setSaveError(null)
+    try {
+      const toAdd = drafts.filter((_, i) => selected[i])
+      await addItems(toAdd)
+      onConfirm()
+    } catch (e: any) {
+      setSaveError(e?.message ?? '저장 중 오류가 발생했습니다.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleSaveEdit = (idx: number, data: Partial<ResponsibilityItem>) => {
@@ -115,14 +125,20 @@ export function ParseResultPreview({ result, onConfirm, onClose }: Props) {
           ))}
         </div>
 
+        {saveError && (
+          <div className="mx-4 mb-2 p-2.5 bg-red-50 rounded-xl text-xs text-red-600 break-all">
+            저장 실패: {saveError}
+          </div>
+        )}
+
         <div className="flex gap-2 p-4">
           <button
             onClick={handleAddSelected}
-            disabled={!selected.some(Boolean)}
+            disabled={!selected.some(Boolean) || saving}
             className="flex-1 flex items-center justify-center gap-1.5 bg-[#6C63FF] text-white rounded-full py-2.5 text-sm font-medium disabled:opacity-50 hover:bg-[#5A52E8] transition-colors"
           >
             <Check size={14} />
-            선택 항목 추가 ({selected.filter(Boolean).length}개)
+            {saving ? '저장 중...' : `선택 항목 추가 (${selected.filter(Boolean).length}개)`}
           </button>
         </div>
       </div>
