@@ -12,15 +12,28 @@ export async function getCards(userId: string): Promise<CreditCard[]> {
     .sort((a, b) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0))
 }
 
+function deepClean(obj: any): any {
+  if (Array.isArray(obj)) return obj.map(deepClean)
+  if (obj && typeof obj === 'object' && !(obj instanceof Date) && !obj.toDate) {
+    return Object.fromEntries(
+      Object.entries(obj)
+        .filter(([, v]) => v !== undefined)
+        .map(([k, v]) => [k, deepClean(v)])
+    )
+  }
+  return obj
+}
+
 export async function addCard(
   userId: string,
   data: Omit<CreditCard, 'id' | 'userId' | 'createdAt'>
 ): Promise<string> {
-  const clean = Object.fromEntries(
-    Object.entries({ ...data, userId, isActive: true, createdAt: Timestamp.now() })
-      .filter(([, v]) => v !== undefined)
-  )
-  const ref = await addDoc(cardsRef(userId), clean)
+  const ref = await addDoc(cardsRef(userId), deepClean({
+    ...data,
+    userId,
+    isActive: true,
+    createdAt: Timestamp.now(),
+  }))
   return ref.id
 }
 
