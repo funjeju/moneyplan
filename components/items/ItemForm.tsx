@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { CATEGORY_META } from '@/lib/utils/category'
 import { useGroups } from '@/hooks/useGroups'
+import { useCards } from '@/hooks/useCards'
 import type { ResponsibilityItem, CategorySlug, PaymentCycle } from '@/lib/types'
 
 const CURRENCY_OPTIONS = [
@@ -33,6 +34,7 @@ const CYCLE_OPTIONS: { value: PaymentCycle; label: string }[] = [
 
 export function ItemForm({ initialData, onSave, onCancel }: Props) {
   const { groups } = useGroups()
+  const { cards } = useCards()
   const [name, setName] = useState(initialData?.name ?? '')
   const [category, setCategory] = useState<CategorySlug>(initialData?.category ?? 'subscription')
   const [groupId, setGroupId] = useState<string>(initialData?.groupId ?? '')
@@ -41,6 +43,7 @@ export function ItemForm({ initialData, onSave, onCancel }: Props) {
   const [cycle, setCycle] = useState<PaymentCycle>(initialData?.cycle ?? 'monthly')
   const [dayOfMonth, setDayOfMonth] = useState(initialData?.dayOfMonth?.toString() ?? '')
   const [provider, setProvider] = useState(initialData?.provider ?? '')
+  const [paymentCardId, setPaymentCardId] = useState<string>(initialData?.paymentCardId ?? '')
   const [paymentMethod, setPaymentMethod] = useState(initialData?.paymentMethod ?? '')
   const [contractEndDate, setContractEndDate] = useState('')
   const [autoRenews, setAutoRenews] = useState(initialData?.autoRenews ?? false)
@@ -57,7 +60,10 @@ export function ItemForm({ initialData, onSave, onCancel }: Props) {
       currency: currency !== 'KRW' ? (currency as any) : undefined,
       cycle,
       provider,
-      paymentMethod: paymentMethod || undefined,
+      paymentCardId: paymentCardId || undefined,
+      paymentMethod: paymentCardId
+        ? (cards.find(c => c.id === paymentCardId)?.name ?? paymentMethod ?? undefined)
+        : (paymentMethod || undefined),
       dayOfMonth: dayOfMonth ? Number(dayOfMonth) : undefined,
       autoRenews,
       isAutoPayment,
@@ -153,7 +159,32 @@ export function ItemForm({ initialData, onSave, onCancel }: Props) {
         </div>
         <div>
           <label className="text-xs text-gray-500 mb-1 block">결제 수단</label>
-          <Input value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} placeholder="신한카드 등" />
+          {cards.length > 0 ? (
+            <Select value={paymentCardId || '__manual__'} onValueChange={v => {
+              if (!v || v === '__manual__') { setPaymentCardId('') }
+              else { setPaymentCardId(v); setPaymentMethod('') }
+            }}>
+              <SelectTrigger>
+                <SelectValue placeholder="카드 선택" />
+              </SelectTrigger>
+              <SelectContent>
+                {cards.map(c => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name} {c.last4Digits ? `(${c.last4Digits})` : ''}
+                  </SelectItem>
+                ))}
+                <SelectItem value="__manual__">직접 입력</SelectItem>
+              </SelectContent>
+            </Select>
+          ) : null}
+          {(cards.length === 0 || paymentCardId === '') && (
+            <Input
+              value={paymentMethod}
+              onChange={e => setPaymentMethod(e.target.value)}
+              placeholder="신한카드, 현대카드 등"
+              className={cards.length > 0 ? 'mt-1' : ''}
+            />
+          )}
         </div>
       </div>
 
