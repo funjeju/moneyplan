@@ -34,7 +34,7 @@ export function PaymentTimeline({ items }: Props) {
                 D+{days}
               </span>
               <span className="text-xs flex-1 truncate">{item.name}</span>
-              <span className="text-xs font-semibold tabular-nums">{fmtMoney(item.amount)}</span>
+              <span className="text-xs font-semibold tabular-nums">{fmtMoney(item.amount, item.currency)}</span>
               {item.paymentMethod && (
                 <span className="text-xs text-gray-400 hidden sm:block">{item.paymentMethod}</span>
               )}
