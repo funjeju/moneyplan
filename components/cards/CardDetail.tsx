@@ -4,6 +4,14 @@ import { Progress } from '@/components/ui/progress'
 import { Check, AlertCircle, ArrowRight } from 'lucide-react'
 import { calculateBenefitAchievement } from '@/lib/utils/card'
 import { toMonthlyAmount, fmtMoney } from '@/lib/utils'
+
+function itemBelongsToCard(item: ResponsibilityItem, card: CreditCard): boolean {
+  if (item.paymentCardId === card.id) return true
+  if (!item.paymentMethod) return false
+  const method = item.paymentMethod.toLowerCase()
+  const keyword = card.name.toLowerCase().split(/[\s(]/)[0]
+  return keyword.length >= 2 && method.includes(keyword)
+}
 import { ItemCard } from '@/components/items/ItemCard'
 import type { CreditCard, ResponsibilityItem } from '@/lib/types'
 
@@ -14,8 +22,8 @@ interface Props {
 
 export function CardDetail({ card, allItems }: Props) {
   const cardItems = useMemo(
-    () => allItems.filter(i => i.paymentCardId === card.id && i.status === 'active'),
-    [allItems, card.id]
+    () => allItems.filter(i => (i.status === 'active' || i.status === 'paid') && itemBelongsToCard(i, card)),
+    [allItems, card]
   )
 
   const monthlyTotal = useMemo(
@@ -31,7 +39,7 @@ export function CardDetail({ card, allItems }: Props) {
   const simulations = useMemo(() => {
     if (achievements.every(a => a.isAchieved)) return []
     const unachieved = achievements.filter(a => !a.isAchieved)
-    const otherItems = allItems.filter(i => i.paymentCardId !== card.id && i.status === 'active')
+    const otherItems = allItems.filter(i => i.status === 'active' && !itemBelongsToCard(i, card))
 
     return unachieved.flatMap(ach => {
       const needed = ach.remaining

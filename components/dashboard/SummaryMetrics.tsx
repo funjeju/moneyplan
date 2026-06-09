@@ -24,11 +24,13 @@ function fmtMixedTotals(items: ResponsibilityItem[]): string {
 }
 
 export function SummaryMetrics({ monthlyTotal, urgentPaymentCount, expiringCount, cards, items }: Props) {
-  const topCardAchievement = cards.reduce((best, card) => {
-    const achievements = calculateBenefitAchievement(card, items)
-    const topRate = Math.max(...achievements.map(a => a.rate), 0)
-    return topRate > best.rate ? { card, rate: topRate } : best
-  }, { card: null as CardType | null, rate: 0 })
+  const topCardAchievement = cards.length > 0
+    ? cards.reduce((best, card) => {
+        const achievements = calculateBenefitAchievement(card, items)
+        const topRate = Math.max(...achievements.map(a => a.rate), 0)
+        return topRate >= best.rate ? { card, rate: topRate } : best
+      }, { card: cards[0], rate: -1 })
+    : { card: null as CardType | null, rate: 0 }
 
   const activeItems = items.filter(i => i.status === 'active')
   const mixedTotal = fmtMixedTotals(activeItems)

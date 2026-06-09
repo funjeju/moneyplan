@@ -12,11 +12,22 @@ export interface BenefitAchievement {
   isAchieved: boolean
 }
 
+function itemBelongsToCard(item: ResponsibilityItem, card: CreditCard): boolean {
+  if (item.paymentCardId === card.id) return true
+  if (!item.paymentMethod) return false
+  const method = item.paymentMethod.toLowerCase()
+  return card.name.toLowerCase().split(/[\s(]/)[0].length >= 2 &&
+    method.includes(card.name.toLowerCase().split(/[\s(]/)[0])
+}
+
 export function calculateBenefitAchievement(
   card: CreditCard,
   items: ResponsibilityItem[]
 ): BenefitAchievement[] {
-  const cardItems = items.filter(i => i.paymentCardId === card.id && i.status === 'active')
+  // active + paid 모두 포함 (실제 지출/납부 반영)
+  const cardItems = items.filter(i =>
+    (i.status === 'active' || i.status === 'paid') && itemBelongsToCard(i, card)
+  )
 
   return card.benefits
     .filter(b => b.isActive)

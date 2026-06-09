@@ -11,12 +11,14 @@ import { CategoryBadge } from '@/components/shared/CategoryBadge'
 import { ItemForm } from '@/components/items/ItemForm'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { ArrowLeft, Pencil, Trash2, CheckCircle2, Upload, RotateCcw } from 'lucide-react'
+import { ArrowLeft, Pencil, Trash2, CheckCircle2, Upload } from 'lucide-react'
 import * as Icons from 'lucide-react'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { storage } from '@/lib/firebase'
+import { useCards } from '@/hooks/useCards'
 import type { ResponsibilityItem } from '@/lib/types'
 
 const CYCLE_LABELS: Record<string, string> = {
@@ -39,10 +41,15 @@ export default function ItemDetailPage() {
   const router = useRouter()
   const { user } = useAuth()
   const { updateItem, deleteItem } = useItems()
+  const { cards } = useCards()
   const [showEdit, setShowEdit] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [showPaidDialog, setShowPaidDialog] = useState(false)
   const [paidDate, setPaidDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [paidMethod, setPaidMethod] = useState<'card' | 'cash' | 'other'>('card')
+  const [paidCardId, setPaidCardId] = useState('')
+  const [cashReceipt, setCashReceipt] = useState(false)
+  const [otherMethod, setOtherMethod] = useState('')
   const [receiptFile, setReceiptFile] = useState<File | null>(null)
   const [savingPaid, setSavingPaid] = useState(false)
 
@@ -95,11 +102,19 @@ export default function ItemDetailPage() {
         await uploadBytes(storageRef, receiptFile)
         receiptUrl = await getDownloadURL(storageRef)
       }
+      const paidCard = cards.find(c => c.id === paidCardId)
+      const paidPaymentMethod =
+        paidMethod === 'card' ? (paidCard?.name ?? item.paymentMethod ?? '') :
+        paidMethod === 'cash' ? `현금${cashReceipt ? ' (현금영수증 처리)' : ''}` :
+        otherMethod || '기타'
+
       updateItem({
         id: item.id,
         data: {
           status: 'paid',
           paidAt: new Date(paidDate) as any,
+          paymentMethod: paidPaymentMethod,
+          ...(paidMethod === 'card' && paidCardId ? { paymentCardId: paidCardId } : {}),
           ...(receiptUrl ? { receiptUrl } : {}),
         },
       })
@@ -118,7 +133,7 @@ export default function ItemDetailPage() {
           <ArrowLeft size={20} />
         </button>
         <h1 className="text-lg font-semibold flex-1">항목 상세</h1>
-        {item.status !== 'paid' && (
+        {item.cycle === 'once' && item.status !== 'paid' && (
           <Button size="sm" className="bg-green-500 hover:bg-green-600 text-white" onClick={() => setShowPaidDialog(true)}>
             <CheckCircle2 size={14} className="mr-1" /> 납부완료
           </Button>
@@ -150,7 +165,7 @@ export default function ItemDetailPage() {
         <div className="flex items-end justify-between">
           <div>
             <p className={`text-2xl font-bold tabular-nums ${item.amount < 0 ? 'text-blue-500' : ''}`}>
-              {fmtMoney(item.amount)}
+              {fmtMoney(item.amount, item.currency)}
             </p>
             <p className="text-sm text-gray-400">{CYCLE_LABELS[item.cycle]}</p>
           </div>
@@ -246,6 +261,62 @@ export default function ItemDetailPage() {
                 onChange={e => setPaidDate(e.target.value)}
                 className="w-full rounded-md border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
               />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 mb-2 block">납부 수단</label>
+              <div className="flex gap-2 mb-3">
+                {(['card', 'cash', 'other'] as const).map(m => (
+                  <button
+                    key={m}
+                    onClick={() => setPaidMethod(m)}
+                    className={`flex-1 py-1.5 rounded-lg text-sm border transition-colors ${paidMethod === m ? 'bg-[#6C63FF] text-white border-[#6C63FF]' : 'border-gray-200 text-gray-500 hover:border-[#6C63FF]/40'}`}
+                  >
+                    {m === 'card' ? '카드' : m === 'cash' ? '현금' : '기타'}
+                  </button>
+                ))}
+              </div>
+              {paidMethod === 'card' && (
+                cards.length > 0 ? (
+                  <Select value={paidCardId || '__none__'} onValueChange={v => setPaidCardId(v === '__none__' ? '' : v)}>
+                    <SelectTrigger>
+                      <SelectValue>
+                        {paidCardId
+                          ? (() => { const c = cards.find(x => x.id === paidCardId); return c ? `${c.name}${c.last4Digits ? ` (${c.last4Digits})` : ''}` : '카드 선택' })()
+                          : '카드 선택'}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">카드 선택 안함</SelectItem>
+                      {cards.map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.name}{c.last4Digits ? ` (${c.last4Digits})` : ''}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <input
+                    type="text"
+                    placeholder="카드명 입력"
+                    className="w-full rounded-md border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                    value={otherMethod}
+                    onChange={e => setOtherMethod(e.target.value)}
+                  />
+                )
+              )}
+              {paidMethod === 'cash' && (
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input type="checkbox" checked={cashReceipt} onChange={e => setCashReceipt(e.target.checked)} className="rounded" />
+                  현금영수증 처리
+                </label>
+              )}
+              {paidMethod === 'other' && (
+                <input
+                  type="text"
+                  placeholder="납부 수단 직접 입력"
+                  className="w-full rounded-md border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  value={otherMethod}
+                  onChange={e => setOtherMethod(e.target.value)}
+                />
+              )}
             </div>
             <div>
               <label className="text-xs text-gray-500 mb-1 block">납부 영수증 (선택)</label>

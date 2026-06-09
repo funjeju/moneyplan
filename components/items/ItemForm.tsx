@@ -165,13 +165,11 @@ export function ItemForm({ initialData, onSave, onCancel }: Props) {
               else { setPaymentCardId(v); setPaymentMethod('') }
             }}>
               <SelectTrigger>
-                <SelectValue>
+                <span className="text-sm truncate">
                   {paymentCardId
-                    ? (cards.find(c => c.id === paymentCardId)
-                        ? `${cards.find(c => c.id === paymentCardId)!.name}${cards.find(c => c.id === paymentCardId)!.last4Digits ? ` (${cards.find(c => c.id === paymentCardId)!.last4Digits})` : ''}`
-                        : '카드 선택')
+                    ? (() => { const c = cards.find(x => x.id === paymentCardId); return c ? `${c.name}${c.last4Digits ? ` (${c.last4Digits})` : ''}` : '카드 선택' })()
                     : '직접 입력'}
-                </SelectValue>
+                </span>
               </SelectTrigger>
               <SelectContent>
                 {cards.map(c => (
@@ -213,7 +211,9 @@ export function ItemForm({ initialData, onSave, onCancel }: Props) {
           <label className="text-xs text-gray-500 mb-1 block">그룹</label>
           <Select value={groupId || '__none__'} onValueChange={v => setGroupId(v === '__none__' ? '' : (v ?? ''))}>
             <SelectTrigger>
-              <SelectValue placeholder="그룹 없음" />
+              <span className="text-sm truncate">
+                {groupId ? (groups.find(g => g.id === groupId)?.name ?? '그룹 선택') : '그룹 없음'}
+              </span>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="__none__">그룹 없음</SelectItem>

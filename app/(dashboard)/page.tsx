@@ -9,6 +9,7 @@ import { UrgentBanner } from '@/components/dashboard/UrgentBanner'
 import { PaymentTimeline } from '@/components/dashboard/PaymentTimeline'
 import { CardBenefitPanel } from '@/components/dashboard/CardBenefitPanel'
 import { CategoryGrid } from '@/components/dashboard/CategoryGrid'
+import { CategoryDonut } from '@/components/dashboard/CategoryDonut'
 import { getDaysUntilPayment, getDaysUntilExpiry, toMonthlyAmount } from '@/lib/utils'
 
 export default function DashboardPage() {
@@ -20,12 +21,25 @@ export default function DashboardPage() {
   const metrics = useMemo(() => {
     const activeItems = items.filter(i => i.status === 'active')
     const monthlyTotal = activeItems.reduce((sum, i) => sum + toMonthlyAmount(i), 0)
-    const urgentPayments = activeItems.filter(i => getDaysUntilPayment(i) <= 7)
+    const urgentPayments = activeItems.filter(i => {
+      const d = getDaysUntilPayment(i)
+      return d !== null && d <= 7
+    })
     const urgentExpiry = expiringItems.filter(i => {
       const d = getDaysUntilExpiry(i)
       return d !== null && d <= 7
     })
-    return { monthlyTotal, urgentPayments, urgentExpiry, activeItems }
+    // once 항목 중 90일 이내 납부일 도래하는 것도 만료 임박으로 포함
+    const onceUpcoming = activeItems.filter(i => {
+      if (i.cycle !== 'once') return false
+      const d = getDaysUntilPayment(i)
+      return d !== null && d >= 0 && d <= 90
+    })
+    const expiringAll = [
+      ...expiringItems,
+      ...onceUpcoming.filter(u => !expiringItems.find(e => e.id === u.id)),
+    ]
+    return { monthlyTotal, urgentPayments, urgentExpiry, activeItems, expiringAll }
   }, [items, expiringItems])
 
   if (isLoading) {
@@ -52,16 +66,21 @@ export default function DashboardPage() {
       <SummaryMetrics
         monthlyTotal={metrics.monthlyTotal}
         urgentPaymentCount={metrics.urgentPayments.length}
-        expiringCount={expiringItems.length}
+        expiringCount={metrics.expiringAll.length}
         cards={cards}
         items={items}
       />
 
-      <PaymentTimeline items={metrics.activeItems} />
-
-      {cards.length > 0 && (
-        <CardBenefitPanel cards={cards} items={items} />
-      )}
+      {/* 2컬럼: 왼쪽 도넛 차트, 오른쪽 납부일정+카드혜택 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <CategoryDonut items={metrics.activeItems} />
+        <div className="space-y-4">
+          <PaymentTimeline items={metrics.activeItems} />
+          {cards.length > 0 && (
+            <CardBenefitPanel cards={cards} items={items} />
+          )}
+        </div>
+      </div>
 
       <CategoryGrid items={metrics.activeItems} />
 
