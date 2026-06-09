@@ -45,28 +45,51 @@ const PARSE_SYSTEM_PROMPT = `당신은 생활 재정 책임 관리 앱의 AI 파
 
 export async function POST(req: NextRequest) {
   try {
-    const { type, content } = await req.json()
+    const body = await req.json()
 
-    let prompt: string
-    let imagePart: any = null
+    // 신형: { text?, images: [{ data, mimeType }] }
+    // 구형 호환: { type: 'image'|'text', content }
+    let textContent: string | undefined
+    let imageList: { data: string; mimeType: string }[] = []
 
-    if (type === 'image') {
-      prompt = '이 이미지에서 정기 지출/계약 항목을 추출해주세요.\n\n' + PARSE_SYSTEM_PROMPT
-      imagePart = {
-        inlineData: { data: content, mimeType: 'image/jpeg' },
-      }
+    if (body.images !== undefined) {
+      textContent = body.text
+      imageList = body.images ?? []
+    } else if (body.type === 'image') {
+      imageList = [{ data: body.content, mimeType: body.mimeType ?? 'image/jpeg' }]
     } else {
-      prompt = `${PARSE_SYSTEM_PROMPT}\n\n다음 텍스트에서 정기 지출/계약 항목들을 추출해주세요:\n\n${content}`
+      textContent = body.content
     }
 
-    const parts = imagePart ? [imagePart, { text: prompt }] : [{ text: prompt }]
+    const imageParts = imageList.map((img) => ({
+      inlineData: { data: img.data, mimeType: img.mimeType },
+    }))
+
+    const userText = textContent
+      ? `사용자 부연설명: ${textContent}\n\n`
+      : ''
+    const prompt =
+      imageParts.length > 0
+        ? `${userText}이 이미지(들)에서 정기 지출/계약 항목을 추출해주세요.\n\n` + PARSE_SYSTEM_PROMPT
+        : `${PARSE_SYSTEM_PROMPT}\n\n다음 텍스트에서 정기 지출/계약 항목들을 추출해주세요:\n\n${textContent}`
+
+    const parts = [...imageParts, { text: prompt }]
     const result = await model.generateContent(parts)
     const raw = result.response.text().replace(/```json|```/g, '').trim()
 
     const parsed = JSON.parse(raw)
-    return NextResponse.json(parsed)
+    // 응답 필드 기본값 보장
+    return NextResponse.json({
+      items: parsed.items ?? [],
+      confidence: parsed.confidence ?? 0,
+      missingFields: parsed.missingFields ?? [],
+      followUpQuestions: parsed.followUpQuestions ?? [],
+    })
   } catch (err) {
     console.error('AI parse error:', err)
-    return NextResponse.json({ error: 'AI 파싱 실패' }, { status: 500 })
+    return NextResponse.json(
+      { items: [], confidence: 0, missingFields: [], followUpQuestions: [], error: 'AI 파싱 실패' },
+      { status: 500 }
+    )
   }
 }

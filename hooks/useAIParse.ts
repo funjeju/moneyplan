@@ -6,14 +6,17 @@ export function useAIParse() {
   const [result, setResult] = useState<ParseResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const parseText = async (text: string) => {
+  const parseMixed = async ({ text, files }: { text?: string; files?: File[] }) => {
     setIsLoading(true)
     setError(null)
     try {
+      const images = files?.length
+        ? await Promise.all(files.map(async (f) => ({ data: await fileToBase64(f), mimeType: f.type || 'image/jpeg' })))
+        : []
       const res = await fetch('/api/ai/parse', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'text', content: text }),
+        body: JSON.stringify({ text, images }),
       })
       const data: ParseResponse = await res.json()
       setResult(data)
@@ -26,28 +29,11 @@ export function useAIParse() {
     }
   }
 
-  const parseImage = async (file: File) => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      const base64 = await fileToBase64(file)
-      const res = await fetch('/api/ai/parse', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'image', content: base64 }),
-      })
-      const data: ParseResponse = await res.json()
-      setResult(data)
-      return data
-    } catch {
-      setError('이미지 분석 중 오류가 발생했습니다.')
-      return null
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  // 하위 호환
+  const parseText = (text: string) => parseMixed({ text })
+  const parseImage = (file: File) => parseMixed({ files: [file] })
 
-  return { parseText, parseImage, isLoading, result, error, reset: () => setResult(null) }
+  return { parseText, parseImage, parseMixed, isLoading, result, error, reset: () => setResult(null) }
 }
 
 function fileToBase64(file: File): Promise<string> {

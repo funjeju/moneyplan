@@ -1,6 +1,6 @@
 'use client'
 import { useState, useRef } from 'react'
-import { Sparkles, Camera, Plus, MessageCircle } from 'lucide-react'
+import { Sparkles, Camera, Plus, MessageCircle, X, Send } from 'lucide-react'
 import { useAIParse } from '@/hooks/useAIParse'
 import { ParseResultPreview } from './ParseResultPreview'
 import { AIChatPanel } from './AIChatPanel'
@@ -10,25 +10,52 @@ import { useItems } from '@/hooks/useItems'
 
 export function AIInputBar() {
   const [input, setInput] = useState('')
+  const [attachments, setAttachments] = useState<File[]>([])
+  const [previews, setPreviews] = useState<string[]>([])
   const [showPreview, setShowPreview] = useState(false)
   const [showManualForm, setShowManualForm] = useState(false)
   const [showChat, setShowChat] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
-  const { parseText, parseImage, isLoading, result, reset } = useAIParse()
+  const { parseMixed, isLoading, result, reset } = useAIParse()
   const { addItem } = useItems()
 
-  const handleSubmit = async () => {
-    if (!input.trim()) return
-    const res = await parseText(input)
+  const handleFileAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? [])
+    if (!files.length) return
+    setAttachments(prev => [...prev, ...files])
+    files.forEach(f => {
+      const url = URL.createObjectURL(f)
+      setPreviews(prev => [...prev, url])
+    })
+    e.target.value = ''
+  }
+
+  const removeAttachment = (idx: number) => {
+    URL.revokeObjectURL(previews[idx])
+    setAttachments(prev => prev.filter((_, i) => i !== idx))
+    setPreviews(prev => prev.filter((_, i) => i !== idx))
+  }
+
+  const canSend = !isLoading && (input.trim().length > 0 || attachments.length > 0)
+
+  const handleSend = async () => {
+    if (!canSend) return
+    const res = await parseMixed({ text: input.trim() || undefined, files: attachments })
     if (res) setShowPreview(true)
   }
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const res = await parseImage(file)
-    if (res) setShowPreview(true)
-    e.target.value = ''
+  const handleConfirm = () => {
+    setShowPreview(false)
+    reset()
+    setInput('')
+    attachments.forEach((_, i) => URL.revokeObjectURL(previews[i]))
+    setAttachments([])
+    setPreviews([])
+  }
+
+  const handleClose = () => {
+    setShowPreview(false)
+    reset()
   }
 
   return (
@@ -39,9 +66,27 @@ export function AIInputBar() {
         {showPreview && result && (
           <ParseResultPreview
             result={result}
-            onConfirm={() => { setShowPreview(false); reset(); setInput('') }}
-            onClose={() => { setShowPreview(false); reset() }}
+            onConfirm={handleConfirm}
+            onClose={handleClose}
           />
+        )}
+
+        {/* 첨부 썸네일 row */}
+        {previews.length > 0 && (
+          <div className="flex gap-2 mb-2 flex-wrap">
+            {previews.map((url, i) => (
+              <div key={i} className="relative w-14 h-14 rounded-xl overflow-hidden border border-gray-200 flex-shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={url} alt="" className="w-full h-full object-cover" />
+                <button
+                  onClick={() => removeAttachment(i)}
+                  className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/60 rounded-full flex items-center justify-center text-white hover:bg-black/80"
+                >
+                  <X size={9} />
+                </button>
+              </div>
+            ))}
+          </div>
         )}
 
         {isLoading && (
@@ -58,13 +103,14 @@ export function AIInputBar() {
               type="text"
               value={input}
               onChange={e => setInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-              placeholder="무엇을 도와드릴까요? (예: SKT 55,000원 매월 15일)"
+              onKeyDown={e => e.key === 'Enter' && handleSend()}
+              placeholder={attachments.length > 0 ? '부연설명을 추가하세요 (선택)' : '무엇을 도와드릴까요? (예: SKT 55,000원 매월 15일)'}
               className="flex-1 bg-transparent text-sm outline-none placeholder:text-gray-400"
             />
             <button
               onClick={() => fileRef.current?.click()}
-              className="p-1 text-gray-400 hover:text-gray-600"
+              className="p-1 text-gray-400 hover:text-[#6C63FF] transition-colors"
+              title="이미지 첨부"
             >
               <Camera size={16} />
             </button>
@@ -72,9 +118,18 @@ export function AIInputBar() {
               ref={fileRef}
               type="file"
               accept="image/*"
+              multiple
               className="hidden"
-              onChange={handleImageUpload}
+              onChange={handleFileAdd}
             />
+            {canSend && (
+              <button
+                onClick={handleSend}
+                className="p-1 text-[#6C63FF] hover:text-[#5A52E8] transition-colors"
+              >
+                <Send size={16} />
+              </button>
+            )}
           </div>
           <button
             onClick={() => setShowChat(prev => !prev)}
