@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Sparkles, Camera, Plus, MessageCircle, X, Send } from 'lucide-react'
 import { useAIParse } from '@/hooks/useAIParse'
 import { ParseResultPreview } from './ParseResultPreview'
@@ -19,14 +19,29 @@ export function AIInputBar() {
   const { parseMixed, isLoading, result, error, reset } = useAIParse()
   const { addItem } = useItems()
 
-  const handleFileAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? [])
+  const addFiles = useCallback((files: File[]) => {
     if (!files.length) return
     setAttachments(prev => [...prev, ...files])
     files.forEach(f => {
       const url = URL.createObjectURL(f)
       setPreviews(prev => [...prev, url])
     })
+  }, [])
+
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      const imageFiles = Array.from(e.clipboardData?.items ?? [])
+        .filter(item => item.type.startsWith('image/'))
+        .map(item => item.getAsFile())
+        .filter((f): f is File => f !== null)
+      if (imageFiles.length) addFiles(imageFiles)
+    }
+    window.addEventListener('paste', handlePaste)
+    return () => window.removeEventListener('paste', handlePaste)
+  }, [addFiles])
+
+  const handleFileAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
+    addFiles(Array.from(e.target.files ?? []))
     e.target.value = ''
   }
 
@@ -66,6 +81,7 @@ export function AIInputBar() {
         {showPreview && result && (
           <ParseResultPreview
             result={result}
+            sourceImages={attachments}
             onConfirm={handleConfirm}
             onClose={handleClose}
           />

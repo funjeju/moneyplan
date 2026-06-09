@@ -13,7 +13,7 @@ export function fmtDate(ts: any): string {
 export function toMonthlyAmount(item: ResponsibilityItem): number {
   const m: Record<string, number> = {
     monthly: 1, bimonthly: 0.5, quarterly: 1 / 3,
-    semiannual: 1 / 6, yearly: 1 / 12, once: 0,
+    semiannual: 1 / 6, yearly: 1 / 12, once: 1,
   }
   return Math.round(item.amount * (m[item.cycle] ?? 1))
 }

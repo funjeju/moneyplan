@@ -151,6 +151,25 @@ export default function ItemDetailPage() {
         </div>
       )}
 
+      {/* 원본 이미지 */}
+      {item.sourceImageUrls && item.sourceImageUrls.length > 0 && (
+        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm mb-4">
+          <h3 className="text-sm font-semibold text-gray-500 mb-3">원본 이미지</h3>
+          <div className="flex flex-wrap gap-2">
+            {item.sourceImageUrls.map((url, i) => (
+              <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={url}
+                  alt={`원본 이미지 ${i + 1}`}
+                  className="h-40 w-auto rounded-xl border border-gray-200 object-contain hover:opacity-80 transition-opacity"
+                />
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* AI 파싱 정보 */}
       {item.aiParsed && (
         <div className="flex items-center gap-2 text-xs text-gray-400 mt-2">

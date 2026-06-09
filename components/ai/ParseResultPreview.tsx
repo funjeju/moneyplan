@@ -3,6 +3,8 @@ import { useState } from 'react'
 import { X, Check, Pencil } from 'lucide-react'
 import { CategoryBadge } from '@/components/shared/CategoryBadge'
 import { useItems } from '@/hooks/useItems'
+import { useAuth } from '@/hooks/useAuth'
+import { uploadParseImages } from '@/lib/storage/uploadParseImages'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ItemForm } from '@/components/items/ItemForm'
 import type { ParseResponse, ResponsibilityItem } from '@/lib/types'
@@ -14,12 +16,14 @@ const CYCLE_LABELS: Record<string, string> = {
 
 interface Props {
   result: ParseResponse
+  sourceImages?: File[]
   onConfirm: () => void
   onClose: () => void
 }
 
-export function ParseResultPreview({ result, onConfirm, onClose }: Props) {
+export function ParseResultPreview({ result, sourceImages, onConfirm, onClose }: Props) {
   const { addItems } = useItems()
+  const { user } = useAuth()
   const items = result.items ?? []
   const followUpQuestions = result.followUpQuestions ?? []
 
@@ -44,7 +48,13 @@ export function ParseResultPreview({ result, onConfirm, onClose }: Props) {
     setSaving(true)
     setSaveError(null)
     try {
-      const toAdd = drafts.filter((_, i) => selected[i])
+      let sourceImageUrls: string[] | undefined
+      if (sourceImages?.length && user) {
+        sourceImageUrls = await uploadParseImages(user.uid, sourceImages)
+      }
+      const toAdd = drafts
+        .filter((_, i) => selected[i])
+        .map(item => sourceImageUrls ? { ...item, sourceImageUrls } : item)
       await addItems(toAdd)
       onConfirm()
     } catch (e: any) {

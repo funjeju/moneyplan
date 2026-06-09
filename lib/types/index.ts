@@ -65,6 +65,7 @@ export interface ResponsibilityItem {
   aiParsed: boolean
   aiConfidence?: number
   rawInput?: string
+  sourceImageUrls?: string[]
   status: 'active' | 'expiring' | 'expired' | 'cancelled' | 'paused'
   isArchived: boolean
   memo?: string
