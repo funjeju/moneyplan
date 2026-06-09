@@ -18,11 +18,13 @@ const CYCLE_LABELS: Record<string, string> = {
 interface Props {
   result: ParseResponse
   sourceImages?: File[]
+  originalText?: string
   onConfirm: () => void
   onClose: () => void
+  onReparse?: (followUpAnswer: string) => Promise<void>
 }
 
-export function ParseResultPreview({ result, sourceImages, onConfirm, onClose }: Props) {
+export function ParseResultPreview({ result, sourceImages, onConfirm, onClose, onReparse }: Props) {
   const { addItems } = useItems()
   const { addGroup } = useGroups()
   const { user } = useAuth()
@@ -34,6 +36,8 @@ export function ParseResultPreview({ result, sourceImages, onConfirm, onClose }:
   const [editingIdx, setEditingIdx] = useState<number | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [followUpAnswer, setFollowUpAnswer] = useState('')
+  const [reparsing, setReparsing] = useState(false)
 
   if (items.length === 0) {
     return (
@@ -87,6 +91,17 @@ export function ParseResultPreview({ result, sourceImages, onConfirm, onClose }:
     }
   }
 
+  const handleReparse = async () => {
+    if (!onReparse || !followUpAnswer.trim()) return
+    setReparsing(true)
+    try {
+      await onReparse(followUpAnswer.trim())
+      setFollowUpAnswer('')
+    } finally {
+      setReparsing(false)
+    }
+  }
+
   const handleSaveEdit = (idx: number, data: Partial<ResponsibilityItem>) => {
     const next = [...drafts]
     next[idx] = { ...drafts[idx], ...data }
@@ -110,11 +125,32 @@ export function ParseResultPreview({ result, sourceImages, onConfirm, onClose }:
         </div>
 
         {followUpQuestions.length > 0 && (
-          <div className="mx-4 mb-3 p-3 bg-[#6C63FF]/5 rounded-xl">
-            <p className="text-xs text-[#6C63FF] font-medium mb-1">💡 추가 정보</p>
+          <div className="mx-4 mb-3 p-3 bg-[#6C63FF]/5 rounded-xl space-y-2">
+            <p className="text-xs text-[#6C63FF] font-medium">💡 AI 추가 질문</p>
             {followUpQuestions.map((q, i) => (
-              <p key={i} className="text-xs text-gray-500">{q}</p>
+              <p key={i} className="text-xs text-gray-600">{q}</p>
             ))}
+            {onReparse && (
+              <div className="flex gap-2 mt-2">
+                <input
+                  type="text"
+                  value={followUpAnswer}
+                  onChange={e => setFollowUpAnswer(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && followUpAnswer.trim() && !reparsing) handleReparse()
+                  }}
+                  placeholder="답변을 입력하세요..."
+                  className="flex-1 text-xs bg-white border border-[#6C63FF]/30 rounded-lg px-3 py-2 outline-none focus:border-[#6C63FF]"
+                />
+                <button
+                  onClick={handleReparse}
+                  disabled={!followUpAnswer.trim() || reparsing}
+                  className="flex-shrink-0 text-xs px-3 py-2 bg-[#6C63FF] text-white rounded-lg disabled:opacity-50 hover:bg-[#5A52E8] transition-colors"
+                >
+                  {reparsing ? '분석 중...' : '재분석'}
+                </button>
+              </div>
+            )}
           </div>
         )}
 

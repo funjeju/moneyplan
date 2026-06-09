@@ -59,6 +59,18 @@ export function AIInputBar() {
     if (res) setShowPreview(true)
   }
 
+  const handleReparse = async (followUpAnswer: string) => {
+    if (!result) return
+    const questions = result.followUpQuestions ?? []
+    const combined = [
+      input.trim() ? `[원본 요청]\n${input.trim()}` : '',
+      questions.length > 0 ? `[AI 질문]\n${questions.join('\n')}` : '',
+      `[사용자 답변]\n${followUpAnswer}`,
+    ].filter(Boolean).join('\n\n')
+    const res = await parseMixed({ text: combined, files: attachments })
+    if (res) setShowPreview(true)
+  }
+
   const handleConfirm = () => {
     setShowPreview(false)
     reset()
@@ -84,6 +96,7 @@ export function AIInputBar() {
             sourceImages={attachments}
             onConfirm={handleConfirm}
             onClose={handleClose}
+            onReparse={handleReparse}
           />
         )}
 
