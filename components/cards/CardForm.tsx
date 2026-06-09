@@ -229,7 +229,7 @@ export function CardForm({ initialData, onSave, onCancel }: Props) {
           />
         </div>
 
-        <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+        <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
           {isLoading ? (
             [...Array(5)].map((_, i) => <div key={i} className="h-16 bg-gray-100 rounded-xl animate-pulse" />)
           ) : filtered.length === 0 ? (
@@ -248,7 +248,22 @@ export function CardForm({ initialData, onSave, onCancel }: Props) {
             ))
           )}
         </div>
-        <Button variant="outline" onClick={() => setStep('issuer')} className="w-full mt-3">카드사 다시 선택</Button>
+        <div className="flex gap-2 mt-3">
+          <Button variant="outline" onClick={() => setStep('issuer')} className="flex-1">카드사 다시 선택</Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setIssuer(selectedIssuer)
+              const issuerColor = ISSUER_COLORS[selectedIssuer]
+              if (issuerColor) setColor(issuerColor)
+              setName(selectedIssuer)
+              setStep('detail')
+            }}
+            className="flex-1 text-[#6C63FF] border-[#6C63FF]/30 hover:bg-[#6C63FF]/5"
+          >
+            카드 종류 건너뛰기 →
+          </Button>
+        </div>
       </div>
     )
   }
