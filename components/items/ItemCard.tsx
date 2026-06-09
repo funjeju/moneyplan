@@ -40,6 +40,9 @@ export function ItemCard({ item, onClick }: Props) {
             <p className="text-xs text-gray-400 mt-0.5">
               {[item.owner, item.paymentMethod].filter(Boolean).join(' · ')}
             </p>
+            {item.status === 'paid' && (
+              <span className="text-[10px] bg-green-50 text-green-600 px-1.5 py-0.5 rounded-full font-medium">✅ 납부완료</span>
+            )}
           </div>
         </div>
         <CategoryBadge category={item.category} />

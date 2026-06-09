@@ -68,7 +68,9 @@ export interface ResponsibilityItem {
   aiConfidence?: number
   rawInput?: string
   sourceImageUrls?: string[]
-  status: 'active' | 'expiring' | 'expired' | 'cancelled' | 'paused'
+  status: 'active' | 'expiring' | 'expired' | 'cancelled' | 'paused' | 'paid'
+  paidAt?: Timestamp
+  receiptUrl?: string
   isArchived: boolean
   memo?: string
   createdAt: Timestamp

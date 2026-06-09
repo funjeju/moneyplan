@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-  Home, List, CreditCard, AlertTriangle, Settings, Bell, BarChart3,
+  Home, List, CreditCard, AlertTriangle, Settings, Bell, BarChart3, CheckCircle2,
   Smartphone, Zap, Shield, Play, Settings as SettingsIcon,
   Receipt, Car, Building, Landmark, Briefcase,
   MoreHorizontal, ChevronDown,
@@ -18,6 +18,7 @@ const NAV_ITEMS = [
   { href: '/items', icon: List, label: '전체 항목' },
   { href: '/cards', icon: CreditCard, label: '카드 관리' },
   { href: '/expiry', icon: AlertTriangle, label: '해지·만료' },
+  { href: '/paid', icon: CheckCircle2, label: '납부 완료' },
   { href: '/stats', icon: BarChart3, label: '지출 분석' },
   { href: '/notifications', icon: Bell, label: '알림' },
   { href: '/settings', icon: Settings, label: '설정' },

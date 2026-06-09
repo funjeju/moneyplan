@@ -13,8 +13,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { ArrowLeft, Pencil, Trash2, RotateCcw } from 'lucide-react'
+import { ArrowLeft, Pencil, Trash2, CheckCircle2, Upload, RotateCcw } from 'lucide-react'
 import * as Icons from 'lucide-react'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { storage } from '@/lib/firebase'
 import type { ResponsibilityItem } from '@/lib/types'
 
 const CYCLE_LABELS: Record<string, string> = {
@@ -39,6 +41,10 @@ export default function ItemDetailPage() {
   const { updateItem, deleteItem } = useItems()
   const [showEdit, setShowEdit] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [showPaidDialog, setShowPaidDialog] = useState(false)
+  const [paidDate, setPaidDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [receiptFile, setReceiptFile] = useState<File | null>(null)
+  const [savingPaid, setSavingPaid] = useState(false)
 
   const { data: item, isLoading } = useQuery<ResponsibilityItem>({
     queryKey: ['item', id],
@@ -80,6 +86,30 @@ export default function ItemDetailPage() {
     router.back()
   }
 
+  const handleMarkPaid = async () => {
+    setSavingPaid(true)
+    try {
+      let receiptUrl: string | undefined
+      if (receiptFile && user) {
+        const storageRef = ref(storage, `users/${user.uid}/receipts/${Date.now()}-${receiptFile.name}`)
+        await uploadBytes(storageRef, receiptFile)
+        receiptUrl = await getDownloadURL(storageRef)
+      }
+      updateItem({
+        id: item.id,
+        data: {
+          status: 'paid',
+          paidAt: new Date(paidDate) as any,
+          ...(receiptUrl ? { receiptUrl } : {}),
+        },
+      })
+      setShowPaidDialog(false)
+      router.back()
+    } finally {
+      setSavingPaid(false)
+    }
+  }
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
       {/* 헤더 */}
@@ -88,6 +118,14 @@ export default function ItemDetailPage() {
           <ArrowLeft size={20} />
         </button>
         <h1 className="text-lg font-semibold flex-1">항목 상세</h1>
+        {item.status !== 'paid' && (
+          <Button size="sm" className="bg-green-500 hover:bg-green-600 text-white" onClick={() => setShowPaidDialog(true)}>
+            <CheckCircle2 size={14} className="mr-1" /> 납부완료
+          </Button>
+        )}
+        {item.status === 'paid' && (
+          <span className="text-xs bg-green-50 text-green-600 border border-green-200 px-2 py-1 rounded-lg font-medium">✅ 납부완료</span>
+        )}
         <Button variant="outline" size="sm" onClick={() => setShowEdit(true)}>
           <Pencil size={14} className="mr-1" /> 편집
         </Button>
@@ -192,6 +230,45 @@ export default function ItemDetailPage() {
             }}
             onCancel={() => setShowEdit(false)}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* 납부완료 다이얼로그 */}
+      <Dialog open={showPaidDialog} onOpenChange={setShowPaidDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>납부 완료 처리</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">납부일 *</label>
+              <input
+                type="date"
+                value={paidDate}
+                onChange={e => setPaidDate(e.target.value)}
+                className="w-full rounded-md border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">납부 영수증 (선택)</label>
+              <label className="flex items-center gap-2 cursor-pointer w-full rounded-md border border-dashed border-gray-300 px-3 py-3 hover:border-[#6C63FF] hover:bg-[#6C63FF]/5 transition-colors">
+                <Upload size={15} className="text-gray-400 flex-shrink-0" />
+                <span className="text-sm text-gray-400 truncate">
+                  {receiptFile ? receiptFile.name : '이미지 또는 PDF 첨부'}
+                </span>
+                <input type="file" accept="image/*,application/pdf" className="hidden"
+                  onChange={e => setReceiptFile(e.target.files?.[0] ?? null)} />
+              </label>
+              {receiptFile && (
+                <button onClick={() => setReceiptFile(null)} className="text-xs text-red-400 mt-1 hover:underline">제거</button>
+              )}
+            </div>
+            <p className="text-xs text-gray-400">납부완료 처리된 항목은 납부완료 메뉴로 이동합니다.</p>
+          </div>
+          <div className="flex gap-2 mt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setShowPaidDialog(false)}>취소</Button>
+            <Button className="flex-1 bg-green-500 hover:bg-green-600" onClick={handleMarkPaid} disabled={savingPaid}>
+              {savingPaid ? '처리 중...' : '완료 처리'}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 

@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, List, BarChart3, Bell, Settings } from 'lucide-react'
+import { Home, List, CheckCircle2, Bell, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/useAuth'
@@ -10,7 +10,7 @@ import * as notifDB from '@/lib/firestore/notifications'
 const TABS = [
   { href: '/', icon: Home, label: '홈' },
   { href: '/items', icon: List, label: '항목' },
-  { href: '/stats', icon: BarChart3, label: '분석' },
+  { href: '/paid', icon: CheckCircle2, label: '납부완료' },
   { href: '/notifications', icon: Bell, label: '알림' },
   { href: '/settings', icon: Settings, label: '설정' },
 ]
