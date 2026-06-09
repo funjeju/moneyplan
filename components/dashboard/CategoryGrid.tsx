@@ -28,8 +28,16 @@ export function CategoryGrid({ items }: Props) {
         {activeCategories.map(slug => {
           const meta = CATEGORY_META[slug]
           const catItems = byCategory[slug] ?? []
-          const monthly = catItems.reduce((s, i) => s + toMonthlyAmount(i), 0)
           const IconComponent = (Icons as any)[meta.icon] ?? Icons.MoreHorizontal
+          // 통화별 합계
+          const currMap: Record<string, number> = {}
+          catItems.forEach(i => {
+            const cur = i.currency ?? 'KRW'
+            currMap[cur] = (currMap[cur] ?? 0) + toMonthlyAmount(i)
+          })
+          const totalStr = Object.entries(currMap)
+            .map(([cur, amt]) => fmtMoney(amt, cur))
+            .join(' + ')
 
           return (
             <Link
@@ -46,7 +54,7 @@ export function CategoryGrid({ items }: Props) {
                 </div>
                 <span className="text-sm font-medium">{meta.label}</span>
               </div>
-              <div className="text-base font-semibold tabular-nums">{fmtMoney(monthly)}</div>
+              <div className="text-base font-semibold tabular-nums leading-snug">{totalStr}</div>
               <div className="text-xs text-gray-400 mt-0.5">{catItems.length}건 / 월</div>
             </Link>
           )

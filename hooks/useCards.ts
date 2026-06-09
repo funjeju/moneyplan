@@ -18,6 +18,10 @@ export function useCards() {
     mutationFn: (data: Omit<CreditCard, 'id' | 'userId' | 'createdAt'>) =>
       cardsDB.addCard(user!.uid, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['cards', user?.uid] }),
+    onError: (err: any) => {
+      console.error('[addCard error]', err?.message ?? err)
+      alert('카드 저장 실패: ' + (err?.message ?? String(err)))
+    },
   })
 
   const deleteMutation = useMutation({

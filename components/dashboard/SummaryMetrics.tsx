@@ -1,7 +1,7 @@
 'use client'
 import { TrendingUp, Clock, AlertTriangle, CreditCard } from 'lucide-react'
 import { calculateBenefitAchievement } from '@/lib/utils/card'
-import { fmtMoney } from '@/lib/utils'
+import { fmtMoney, toMonthlyAmount } from '@/lib/utils'
 import type { ResponsibilityItem, CreditCard as CardType } from '@/lib/types'
 
 interface Props {
@@ -12,6 +12,17 @@ interface Props {
   items: ResponsibilityItem[]
 }
 
+function fmtMixedTotals(items: ResponsibilityItem[]): string {
+  const map: Record<string, number> = {}
+  items.forEach(i => {
+    const cur = i.currency ?? 'KRW'
+    map[cur] = (map[cur] ?? 0) + toMonthlyAmount(i)
+  })
+  return Object.entries(map)
+    .map(([cur, amt]) => fmtMoney(amt, cur))
+    .join(' + ')
+}
+
 export function SummaryMetrics({ monthlyTotal, urgentPaymentCount, expiringCount, cards, items }: Props) {
   const topCardAchievement = cards.reduce((best, card) => {
     const achievements = calculateBenefitAchievement(card, items)
@@ -19,12 +30,15 @@ export function SummaryMetrics({ monthlyTotal, urgentPaymentCount, expiringCount
     return topRate > best.rate ? { card, rate: topRate } : best
   }, { card: null as CardType | null, rate: 0 })
 
+  const activeItems = items.filter(i => i.status === 'active')
+  const mixedTotal = fmtMixedTotals(activeItems)
+
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
       <MetricCard
         icon={<TrendingUp size={18} className="text-[#6C63FF]" />}
         label="이번달 지출 예정"
-        value={fmtMoney(monthlyTotal)}
+        value={mixedTotal || fmtMoney(monthlyTotal)}
         sub="등록 항목 기준"
       />
       <MetricCard

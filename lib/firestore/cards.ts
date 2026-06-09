@@ -1,4 +1,4 @@
-import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, query, orderBy, Timestamp } from 'firebase/firestore'
+import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, Timestamp } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import type { CreditCard } from '@/lib/types'
 
@@ -6,9 +6,10 @@ const cardsRef = (userId: string) => collection(db, `users/${userId}/cards`)
 const cardRef = (userId: string, cardId: string) => doc(db, `users/${userId}/cards/${cardId}`)
 
 export async function getCards(userId: string): Promise<CreditCard[]> {
-  const q = query(cardsRef(userId), orderBy('isPrimary', 'desc'))
-  const snapshot = await getDocs(q)
-  return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as CreditCard))
+  const snapshot = await getDocs(cardsRef(userId))
+  return snapshot.docs
+    .map(d => ({ id: d.id, ...d.data() } as CreditCard))
+    .sort((a, b) => (b.isPrimary ? 1 : 0) - (a.isPrimary ? 1 : 0))
 }
 
 export async function addCard(
