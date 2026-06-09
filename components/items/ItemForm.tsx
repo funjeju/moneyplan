@@ -7,6 +7,15 @@ import { CATEGORY_META } from '@/lib/utils/category'
 import { useGroups } from '@/hooks/useGroups'
 import type { ResponsibilityItem, CategorySlug, PaymentCycle } from '@/lib/types'
 
+const CURRENCY_OPTIONS = [
+  { value: 'KRW', label: '₩ 원 (KRW)' },
+  { value: 'USD', label: '$ 달러 (USD)' },
+  { value: 'EUR', label: '€ 유로 (EUR)' },
+  { value: 'JPY', label: '¥ 엔 (JPY)' },
+  { value: 'GBP', label: '£ 파운드 (GBP)' },
+  { value: 'CNY', label: '¥ 위안 (CNY)' },
+]
+
 interface Props {
   initialData?: Partial<ResponsibilityItem>
   onSave: (data: Partial<ResponsibilityItem>) => void
@@ -27,6 +36,7 @@ export function ItemForm({ initialData, onSave, onCancel }: Props) {
   const [name, setName] = useState(initialData?.name ?? '')
   const [category, setCategory] = useState<CategorySlug>(initialData?.category ?? 'subscription')
   const [groupId, setGroupId] = useState<string>(initialData?.groupId ?? '')
+  const [currency, setCurrency] = useState<string>(initialData?.currency ?? 'KRW')
   const [amount, setAmount] = useState(initialData?.amount?.toString() ?? '')
   const [cycle, setCycle] = useState<PaymentCycle>(initialData?.cycle ?? 'monthly')
   const [dayOfMonth, setDayOfMonth] = useState(initialData?.dayOfMonth?.toString() ?? '')
@@ -44,6 +54,7 @@ export function ItemForm({ initialData, onSave, onCancel }: Props) {
       name,
       category,
       amount: Number(amount),
+      currency: currency !== 'KRW' ? (currency as any) : undefined,
       cycle,
       provider,
       paymentMethod: paymentMethod || undefined,
@@ -101,13 +112,26 @@ export function ItemForm({ initialData, onSave, onCancel }: Props) {
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-xs text-gray-500 mb-1 block">금액 (원) *</label>
-          <Input
-            type="number"
-            value={amount}
-            onChange={e => setAmount(e.target.value)}
-            placeholder="29900"
-          />
+          <label className="text-xs text-gray-500 mb-1 block">금액 *</label>
+          <div className="flex gap-1">
+            <Select value={currency} onValueChange={v => v && setCurrency(v)}>
+              <SelectTrigger className="w-[90px] flex-shrink-0">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CURRENCY_OPTIONS.map(opt => (
+                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input
+              type="number"
+              value={amount}
+              onChange={e => setAmount(e.target.value)}
+              placeholder="29900"
+              className="flex-1"
+            />
+          </div>
         </div>
         <div>
           <label className="text-xs text-gray-500 mb-1 block">납부일 (매월 N일)</label>

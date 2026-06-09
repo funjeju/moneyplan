@@ -37,6 +37,7 @@ const PARSE_SYSTEM_PROMPT = `당신은 생활 재정 책임 관리 앱의 AI 파
       "category": "카테고리 슬러그",
       "provider": "공급업체명 또는 null",
       "amount": 숫자 또는 null,
+      "currency": "KRW|USD|EUR|JPY|GBP|CNY (기본값 KRW, 외화면 명시)",
       "cycle": "monthly|bimonthly|quarterly|semiannual|yearly|once",
       "dayOfMonth": 숫자 또는 null,
       "contractEndDate": "YYYY-MM-DD 또는 null",

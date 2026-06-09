@@ -77,7 +77,10 @@ export function ItemCard({ item, onClick }: Props) {
 
       <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
         <span className={`text-base font-semibold tabular-nums ${item.amount < 0 ? 'text-blue-500' : ''}`}>
-          {fmtMoney(item.amount)}
+          {fmtMoney(item.amount, item.currency)}
+          {item.currency && item.currency !== 'KRW' && (
+            <span className="text-xs text-gray-400 font-normal ml-1">{item.currency}</span>
+          )}
         </span>
         <DayBadge days={daysUntilPayment} type="payment" />
       </div>

@@ -1,8 +1,19 @@
 import type { ResponsibilityItem } from '@/lib/types'
 
-export function fmtMoney(n: number): string {
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  KRW: '원', USD: '$', EUR: '€', JPY: '¥', GBP: '£', CNY: '¥',
+}
+const CURRENCY_LOCALES: Record<string, string> = {
+  KRW: 'ko-KR', USD: 'en-US', EUR: 'de-DE', JPY: 'ja-JP', GBP: 'en-GB', CNY: 'zh-CN',
+}
+
+export function fmtMoney(n: number, currency?: string): string {
+  const cur = currency ?? 'KRW'
   const abs = Math.abs(n)
-  const str = abs.toLocaleString('ko-KR') + '원'
+  const locale = CURRENCY_LOCALES[cur] ?? 'ko-KR'
+  const formatted = abs.toLocaleString(locale)
+  const sym = CURRENCY_SYMBOLS[cur] ?? '원'
+  const str = cur === 'KRW' ? `${formatted}원` : `${sym}${formatted}`
   return n < 0 ? `-${str}` : str
 }
 

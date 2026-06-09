@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { uploadParseImages } from '@/lib/storage/uploadParseImages'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ItemForm } from '@/components/items/ItemForm'
+import { fmtMoney } from '@/lib/utils'
 import type { ParseResponse, ParsedItem, ResponsibilityItem } from '@/lib/types'
 
 const CYCLE_LABELS: Record<string, string> = {
@@ -173,7 +174,10 @@ export function ParseResultPreview({ result, sourceImages, onConfirm, onClose, o
                   {item.category && <CategoryBadge category={item.category} size="sm" />}
                 </div>
                 <p className="text-xs text-gray-400">
-                  {item.amount ? `${item.amount.toLocaleString()}원` : '금액 미확인'}
+                  {item.amount ? fmtMoney(item.amount, item.currency) : '금액 미확인'}
+                  {item.currency && item.currency !== 'KRW' && (
+                    <span className="ml-1 text-orange-400 font-medium">{item.currency}</span>
+                  )}
                   {item.cycle ? ` · ${CYCLE_LABELS[item.cycle]}` : ''}
                   {item.dayOfMonth ? ` ${item.dayOfMonth}일` : ''}
                 </p>

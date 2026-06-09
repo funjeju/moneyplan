@@ -39,6 +39,7 @@ export interface ResponsibilityItem {
   subcategory?: string
   tags?: string[]
   amount: number
+  currency?: 'KRW' | 'USD' | 'EUR' | 'JPY' | 'GBP' | 'CNY'
   originalAmount?: number
   discountAmount?: number
   discountReason?: string
