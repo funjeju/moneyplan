@@ -92,7 +92,6 @@ export async function POST(req: NextRequest) {
       model: 'gpt-5',
       messages: [{ role: 'user', content: contentParts }],
       max_completion_tokens: 2000,
-      temperature: 0.1,
     })
 
     const raw = response.choices[0].message.content?.replace(/```json|```/g, '').trim() ?? '{}'
