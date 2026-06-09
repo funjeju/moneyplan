@@ -3,6 +3,15 @@ import { ChevronRight } from 'lucide-react'
 import { CategoryBadge } from '@/components/shared/CategoryBadge'
 import { CATEGORY_META } from '@/lib/utils/category'
 import { fmtMoney, toMonthlyAmount } from '@/lib/utils'
+
+function groupByCurrency(items: ResponsibilityItem[]) {
+  const map: Record<string, number> = {}
+  items.forEach(i => {
+    const cur = i.currency ?? 'KRW'
+    map[cur] = (map[cur] ?? 0) + toMonthlyAmount(i)
+  })
+  return map
+}
 import type { ItemGroup, ResponsibilityItem } from '@/lib/types'
 import * as Icons from 'lucide-react'
 
@@ -15,7 +24,7 @@ interface Props {
 export function GroupCard({ group, items, onClick }: Props) {
   const meta = CATEGORY_META[group.category]
   const IconComponent = (Icons as any)[meta?.icon] ?? Icons.Package
-  const total = items.reduce((sum, i) => sum + toMonthlyAmount(i), 0)
+  const currencyTotals = groupByCurrency(items)
   const positiveItems = items.filter(i => i.amount >= 0)
   const discountItems = items.filter(i => i.amount < 0)
 
@@ -46,21 +55,26 @@ export function GroupCard({ group, items, onClick }: Props) {
       <div className="flex flex-wrap gap-1 mb-3">
         {positiveItems.map(item => (
           <span key={item.id} className="text-xs bg-gray-50 text-gray-500 px-2 py-0.5 rounded-full">
-            {item.name} {fmtMoney(item.amount)}
+            {item.name} {fmtMoney(item.amount, item.currency)}
           </span>
         ))}
         {discountItems.map(item => (
           <span key={item.id} className="text-xs bg-blue-50 text-blue-500 px-2 py-0.5 rounded-full">
-            {item.name} {fmtMoney(item.amount)}
+            {item.name} {fmtMoney(item.amount, item.currency)}
           </span>
         ))}
       </div>
 
       <div className="flex items-center justify-between pt-3 border-t border-gray-100">
         <span className="text-xs text-gray-400">{items.length}개 항목</span>
-        <span className={`text-base font-semibold tabular-nums ${total < 0 ? 'text-blue-500' : ''}`}>
-          {fmtMoney(total)}<span className="text-xs text-gray-400 font-normal">/월</span>
-        </span>
+        <div className="text-right">
+          {Object.entries(currencyTotals).map(([cur, amt]) => (
+            <div key={cur} className={`text-base font-semibold tabular-nums leading-tight ${amt < 0 ? 'text-blue-500' : ''}`}>
+              {fmtMoney(amt, cur)}
+              <span className="text-xs text-gray-400 font-normal">/월</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )

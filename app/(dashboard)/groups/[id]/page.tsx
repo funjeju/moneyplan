@@ -53,7 +53,14 @@ export default function GroupDetailPage() {
   })
 
   const items = useMemo(() => allItems.filter(i => i.groupId === id), [allItems, id])
-  const total = useMemo(() => items.reduce((sum, i) => sum + toMonthlyAmount(i), 0), [items])
+  const currencyTotals = useMemo(() => {
+    const map: Record<string, number> = {}
+    items.forEach(i => {
+      const cur = i.currency ?? 'KRW'
+      map[cur] = (map[cur] ?? 0) + toMonthlyAmount(i)
+    })
+    return map
+  }, [items])
 
   const handleAddItem = async (data: Partial<ResponsibilityItem>) => {
     await itemsDB.addItem(user!.uid, {
@@ -148,9 +155,11 @@ export default function GroupDetailPage() {
         </div>
         <div className="flex items-end justify-between">
           <div>
-            <p className={`text-2xl font-bold tabular-nums ${total < 0 ? 'text-blue-500' : ''}`}>
-              {fmtMoney(total)}
-            </p>
+            {Object.entries(currencyTotals).map(([cur, amt]) => (
+              <p key={cur} className={`text-2xl font-bold tabular-nums leading-tight ${amt < 0 ? 'text-blue-500' : ''}`}>
+                {fmtMoney(amt, cur)}
+              </p>
+            ))}
             <p className="text-sm text-gray-400">월 합계 · {items.length}개 항목</p>
           </div>
           <Button size="sm" className="bg-[#6C63FF] hover:bg-[#5A52E8]" onClick={() => setShowAddItem(true)}>
