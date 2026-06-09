@@ -18,11 +18,15 @@ export function useAIParse() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, images }),
       })
-      const data: ParseResponse = await res.json()
+      const data: ParseResponse & { error?: string } = await res.json()
+      if (!res.ok) {
+        setError(data.error ?? 'AI 분석 오류')
+        return null
+      }
       setResult(data)
       return data
-    } catch {
-      setError('AI 분석 중 오류가 발생했습니다.')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'AI 분석 중 오류가 발생했습니다.')
       return null
     } finally {
       setIsLoading(false)

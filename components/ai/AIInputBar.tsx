@@ -16,7 +16,7 @@ export function AIInputBar() {
   const [showManualForm, setShowManualForm] = useState(false)
   const [showChat, setShowChat] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
-  const { parseMixed, isLoading, result, reset } = useAIParse()
+  const { parseMixed, isLoading, result, error, reset } = useAIParse()
   const { addItem } = useItems()
 
   const handleFileAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,6 +93,13 @@ export function AIInputBar() {
           <div className="flex items-center gap-2 mb-2 text-sm text-gray-400">
             <Sparkles size={14} className="text-[#6C63FF] animate-pulse" />
             AI가 분석 중입니다...
+          </div>
+        )}
+
+        {error && (
+          <div className="flex items-start gap-2 mb-2 p-2.5 bg-red-50 rounded-xl text-xs text-red-600">
+            <span className="flex-1 break-all">{error}</span>
+            <button onClick={() => reset()} className="text-red-400 hover:text-red-600 flex-shrink-0"><X size={12} /></button>
           </div>
         )}
 

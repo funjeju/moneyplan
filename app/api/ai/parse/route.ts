@@ -2,7 +2,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 import { NextRequest, NextResponse } from 'next/server'
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY!)
-const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-preview-05-20' })
+const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
 const PARSE_SYSTEM_PROMPT = `당신은 생활 재정 책임 관리 앱의 AI 파싱 엔진입니다.
 사용자 입력에서 정기 지출, 계약, 구독, 보험, 세금, 과태료, 고지서 등 모든 납부 항목을 추출합니다.
@@ -88,9 +88,10 @@ export async function POST(req: NextRequest) {
       followUpQuestions: parsed.followUpQuestions ?? [],
     })
   } catch (err) {
-    console.error('AI parse error:', err)
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('AI parse error:', msg)
     return NextResponse.json(
-      { items: [], confidence: 0, missingFields: [], followUpQuestions: [], error: 'AI 파싱 실패' },
+      { items: [], confidence: 0, missingFields: [], followUpQuestions: [], error: msg },
       { status: 500 }
     )
   }
