@@ -1,8 +1,7 @@
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import OpenAI from 'openai'
 import { NextRequest, NextResponse } from 'next/server'
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY!)
-const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 const PARSE_SYSTEM_PROMPT = `당신은 생활 재정 책임 관리 앱의 AI 파싱 엔진입니다.
 사용자 입력에서 정기 지출, 계약, 구독, 보험, 세금, 과태료, 고지서 등 모든 납부 항목을 추출합니다.
@@ -49,8 +48,6 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
 
-    // 신형: { text?, images: [{ data, mimeType }] }
-    // 구형 호환: { type: 'image'|'text', content }
     let textContent: string | undefined
     let imageList: { data: string; mimeType: string }[] = []
 
@@ -63,24 +60,38 @@ export async function POST(req: NextRequest) {
       textContent = body.content
     }
 
-    const imageParts = imageList.map((img) => ({
-      inlineData: { data: img.data, mimeType: img.mimeType },
-    }))
+    const userText = textContent ? `사용자 부연설명: ${textContent}\n\n` : ''
 
-    const userText = textContent
-      ? `사용자 부연설명: ${textContent}\n\n`
-      : ''
-    const prompt =
-      imageParts.length > 0
-        ? `${userText}이 이미지(들)에서 정기 지출/계약 항목을 추출해주세요.\n\n` + PARSE_SYSTEM_PROMPT
-        : `${PARSE_SYSTEM_PROMPT}\n\n다음 텍스트에서 정기 지출/계약 항목들을 추출해주세요:\n\n${textContent}`
+    const contentParts: OpenAI.Chat.ChatCompletionContentPart[] = []
 
-    const parts = [...imageParts, { text: prompt }]
-    const result = await model.generateContent(parts)
-    const raw = result.response.text().replace(/```json|```/g, '').trim()
+    if (imageList.length > 0) {
+      contentParts.push({
+        type: 'text',
+        text: `${userText}이 이미지(들)에서 정기 지출/계약 항목을 추출해주세요.\n\n${PARSE_SYSTEM_PROMPT}`,
+      })
+      for (const img of imageList) {
+        contentParts.push({
+          type: 'image_url',
+          image_url: { url: `data:${img.mimeType};base64,${img.data}`, detail: 'high' },
+        })
+      }
+    } else {
+      contentParts.push({
+        type: 'text',
+        text: `${PARSE_SYSTEM_PROMPT}\n\n다음 텍스트에서 정기 지출/계약 항목들을 추출해주세요:\n\n${textContent}`,
+      })
+    }
 
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: contentParts }],
+      max_tokens: 2000,
+      temperature: 0.1,
+    })
+
+    const raw = response.choices[0].message.content?.replace(/```json|```/g, '').trim() ?? '{}'
     const parsed = JSON.parse(raw)
-    // 응답 필드 기본값 보장
+
     return NextResponse.json({
       items: parsed.items ?? [],
       confidence: parsed.confidence ?? 0,
