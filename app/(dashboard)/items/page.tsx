@@ -1,10 +1,12 @@
 'use client'
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core'
 import { useItems } from '@/hooks/useItems'
 import { useGroups } from '@/hooks/useGroups'
 import { ItemCard } from '@/components/items/ItemCard'
-import { GroupCard } from '@/components/items/GroupCard'
+import { DraggableItemCard } from '@/components/items/DraggableItemCard'
+import { DroppableGroupCard } from '@/components/items/DroppableGroupCard'
 import { ItemForm } from '@/components/items/ItemForm'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -23,9 +25,30 @@ const SORT_OPTIONS = [
 
 export default function ItemsPage() {
   const router = useRouter()
-  const { items, isLoading: itemsLoading, addItem } = useItems()
+  const { items, isLoading: itemsLoading, addItem, updateItem } = useItems()
   const { groups, isLoading: groupsLoading, addGroup } = useGroups()
   const [sort, setSort] = useState('payment')
+  const [draggingItem, setDraggingItem] = useState<(typeof items)[0] | null>(null)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  )
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const item = items.find(i => i.id === event.active.id)
+    setDraggingItem(item ?? null)
+  }
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    setDraggingItem(null)
+    const { active, over } = event
+    if (!over) return
+    const groupId = (over.data.current as any)?.groupId
+    if (!groupId) return
+    const item = items.find(i => i.id === active.id)
+    if (!item || item.groupId === groupId) return
+    updateItem({ id: item.id, data: { groupId } })
+  }
   const [showForm, setShowForm] = useState(false)
   const [showNewGroup, setShowNewGroup] = useState(false)
   const [newGroupName, setNewGroupName] = useState('')
@@ -191,19 +214,31 @@ export default function ItemsPage() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {filteredGroups.map(group => (
-            <GroupCard
-              key={group.id}
-              group={group}
-              items={groupedItems[group.id] ?? []}
-              onClick={() => router.push(`/groups/${group.id}`)}
-            />
-          ))}
-          {filteredUngrouped.map(item => (
-            <ItemCard key={item.id} item={item} onClick={() => router.push(`/items/${item.id}`)} />
-          ))}
-        </div>
+        <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+          {filteredUngrouped.length > 0 && filteredGroups.length > 0 && (
+            <p className="text-xs text-gray-400 mb-2">항목을 길게 누른 후 그룹 카드 위로 드래그해서 추가하세요</p>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {filteredGroups.map(group => (
+              <DroppableGroupCard
+                key={group.id}
+                group={group}
+                items={groupedItems[group.id] ?? []}
+                onClick={() => router.push(`/groups/${group.id}`)}
+              />
+            ))}
+            {filteredUngrouped.map(item => (
+              <DraggableItemCard key={item.id} item={item} onClick={() => router.push(`/items/${item.id}`)} />
+            ))}
+          </div>
+          <DragOverlay>
+            {draggingItem && (
+              <div className="opacity-90 rotate-2 scale-105">
+                <ItemCard item={draggingItem} />
+              </div>
+            )}
+          </DragOverlay>
+        </DndContext>
       )}
 
       <Dialog open={showForm} onOpenChange={setShowForm}>
