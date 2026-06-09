@@ -21,7 +21,7 @@ export function CategoryDonut({ items }: Props) {
     return acc
   }, {})
 
-  const categories = (Object.keys(CATEGORY_META) as CategorySlug[])
+  const categoriesRaw = (Object.keys(CATEGORY_META) as CategorySlug[])
     .filter(slug => (byCategory[slug]?.length ?? 0) > 0)
     .map((slug, idx) => {
       const catItems = byCategory[slug] ?? []
@@ -31,7 +31,9 @@ export function CategoryDonut({ items }: Props) {
     .filter(c => c.total > 0)
     .sort((a, b) => b.total - a.total)
 
-  const grandTotal = categories.reduce((s, c) => s + c.total, 0)
+  const grandTotal = categoriesRaw.reduce((s, c) => s + c.total, 0)
+  const categories = categoriesRaw.map(c => ({ ...c, pct: grandTotal > 0 ? c.total / grandTotal : 0 }))
+
   if (grandTotal === 0) return null
 
   // SVG donut
