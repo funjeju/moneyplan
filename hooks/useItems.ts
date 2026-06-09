@@ -20,6 +20,10 @@ export function useItems(category?: string) {
     mutationFn: (data: Partial<ResponsibilityItem>) =>
       itemsDB.addItem(user!.uid, data as any),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['items', user?.uid] }),
+    onError: (err: any) => {
+      console.error('[addItem error]', err?.message ?? err)
+      alert('항목 저장 실패: ' + (err?.message ?? String(err)))
+    },
   })
 
   const updateMutation = useMutation({
