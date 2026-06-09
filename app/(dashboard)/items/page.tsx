@@ -8,10 +8,11 @@ import { GroupCard } from '@/components/items/GroupCard'
 import { ItemForm } from '@/components/items/ItemForm'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Plus, Search, X } from 'lucide-react'
+import { Plus, Search, X, FolderPlus } from 'lucide-react'
 import { getDaysUntilPayment, toMonthlyAmount } from '@/lib/utils'
 import { CATEGORY_META } from '@/lib/utils/category'
 import type { CategorySlug } from '@/lib/types'
+import { CATEGORY_META as CM } from '@/lib/utils/category'
 
 const SORT_OPTIONS = [
   { value: 'payment', label: '납부일 임박순' },
@@ -23,9 +24,13 @@ const SORT_OPTIONS = [
 export default function ItemsPage() {
   const router = useRouter()
   const { items, isLoading: itemsLoading, addItem } = useItems()
-  const { groups, isLoading: groupsLoading } = useGroups()
+  const { groups, isLoading: groupsLoading, addGroup } = useGroups()
   const [sort, setSort] = useState('payment')
   const [showForm, setShowForm] = useState(false)
+  const [showNewGroup, setShowNewGroup] = useState(false)
+  const [newGroupName, setNewGroupName] = useState('')
+  const [newGroupCategory, setNewGroupCategory] = useState<CategorySlug>('telecom')
+  const [newGroupProvider, setNewGroupProvider] = useState('')
   const [search, setSearch] = useState('')
   const [filterCategory, setFilterCategory] = useState<CategorySlug | ''>('')
 
@@ -95,9 +100,14 @@ export default function ItemsPage() {
           <h1 className="text-xl font-semibold">전체 항목</h1>
           <p className="text-sm text-gray-400 mt-0.5">{totalCount}개</p>
         </div>
-        <Button onClick={() => setShowForm(true)} size="sm" className="bg-[#6C63FF] hover:bg-[#5A52E8]">
-          <Plus size={14} className="mr-1" /> 추가
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setShowNewGroup(true)}>
+            <FolderPlus size={14} className="mr-1" /> 그룹
+          </Button>
+          <Button onClick={() => setShowForm(true)} size="sm" className="bg-[#6C63FF] hover:bg-[#5A52E8]">
+            <Plus size={14} className="mr-1" /> 추가
+          </Button>
+        </div>
       </div>
 
       {/* 검색 */}
@@ -203,6 +213,57 @@ export default function ItemsPage() {
             onSave={data => { addItem(data as any); setShowForm(false) }}
             onCancel={() => setShowForm(false)}
           />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showNewGroup} onOpenChange={setShowNewGroup}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>그룹 만들기</DialogTitle></DialogHeader>
+          <div className="space-y-3 py-2">
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">그룹명 *</label>
+              <input
+                className="w-full rounded-md border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                placeholder="예: SKT 통신 패키지"
+                value={newGroupName}
+                onChange={e => setNewGroupName(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">카테고리 *</label>
+              <select
+                className="w-full rounded-md border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                value={newGroupCategory}
+                onChange={e => setNewGroupCategory(e.target.value as CategorySlug)}
+              >
+                {Object.entries(CM).map(([slug, meta]) => (
+                  <option key={slug} value={slug}>{meta.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">공급업체</label>
+              <input
+                className="w-full rounded-md border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                placeholder="예: SK텔레콤"
+                value={newGroupProvider}
+                onChange={e => setNewGroupProvider(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="flex gap-2 mt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setShowNewGroup(false)}>취소</Button>
+            <Button
+              className="flex-1"
+              disabled={!newGroupName}
+              onClick={async () => {
+                await groups && addGroup({ name: newGroupName, category: newGroupCategory, provider: newGroupProvider || undefined })
+                setNewGroupName(''); setNewGroupProvider(''); setShowNewGroup(false)
+              }}
+            >
+              만들기
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

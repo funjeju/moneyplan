@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { CATEGORY_META } from '@/lib/utils/category'
+import { useGroups } from '@/hooks/useGroups'
 import type { ResponsibilityItem, CategorySlug, PaymentCycle } from '@/lib/types'
 
 interface Props {
@@ -22,8 +23,10 @@ const CYCLE_OPTIONS: { value: PaymentCycle; label: string }[] = [
 ]
 
 export function ItemForm({ initialData, onSave, onCancel }: Props) {
+  const { groups } = useGroups()
   const [name, setName] = useState(initialData?.name ?? '')
   const [category, setCategory] = useState<CategorySlug>(initialData?.category ?? 'subscription')
+  const [groupId, setGroupId] = useState<string>(initialData?.groupId ?? '')
   const [amount, setAmount] = useState(initialData?.amount?.toString() ?? '')
   const [cycle, setCycle] = useState<PaymentCycle>(initialData?.cycle ?? 'monthly')
   const [dayOfMonth, setDayOfMonth] = useState(initialData?.dayOfMonth?.toString() ?? '')
@@ -55,6 +58,8 @@ export function ItemForm({ initialData, onSave, onCancel }: Props) {
     if (contractEndDate) {
       data.contractEndDate = new Date(contractEndDate) as any
     }
+    if (groupId) data.groupId = groupId
+    else data.groupId = undefined
     onSave(data)
   }
 
@@ -141,6 +146,23 @@ export function ItemForm({ initialData, onSave, onCancel }: Props) {
         <label className="text-xs text-gray-500 mb-1 block">명의자</label>
         <Input value={owner} onChange={e => setOwner(e.target.value)} placeholder="홍길동" />
       </div>
+
+      {groups.length > 0 && (
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">그룹</label>
+          <Select value={groupId || '__none__'} onValueChange={v => setGroupId(v === '__none__' ? '' : v)}>
+            <SelectTrigger>
+              <SelectValue placeholder="그룹 없음" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">그룹 없음</SelectItem>
+              {groups.map(g => (
+                <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       <div>
         <label className="text-xs text-gray-500 mb-1 block">메모</label>
