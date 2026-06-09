@@ -11,7 +11,7 @@ export function useAIParse() {
     setError(null)
     try {
       const images = files?.length
-        ? await Promise.all(files.map(async (f) => ({ data: await fileToBase64(f), mimeType: f.type || 'image/jpeg' })))
+        ? await Promise.all(files.map(async (f) => ({ data: await fileToBase64(f), mimeType: 'image/jpeg' })))
         : []
       const res = await fetch('/api/ai/parse', {
         method: 'POST',
@@ -36,14 +36,28 @@ export function useAIParse() {
   return { parseText, parseImage, parseMixed, isLoading, result, error, reset: () => setResult(null) }
 }
 
+// 최대 1024px로 리사이즈 + JPEG 0.85 품질로 압축 → Vercel payload 한계(4.5MB) 대응
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => {
-      const result = reader.result as string
-      resolve(result.split(',')[1])
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      const MAX = 1024
+      let { width, height } = img
+      if (width > MAX || height > MAX) {
+        if (width > height) { height = Math.round(height * MAX / width); width = MAX }
+        else { width = Math.round(width * MAX / height); height = MAX }
+      }
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')!
+      ctx.drawImage(img, 0, 0, width, height)
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85)
+      resolve(dataUrl.split(',')[1])
     }
-    reader.onerror = reject
-    reader.readAsDataURL(file)
+    img.onerror = reject
+    img.src = url
   })
 }

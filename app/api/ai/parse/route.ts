@@ -2,10 +2,12 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 import { NextRequest, NextResponse } from 'next/server'
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY!)
-const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-preview-05-20' })
 
 const PARSE_SYSTEM_PROMPT = `당신은 생활 재정 책임 관리 앱의 AI 파싱 엔진입니다.
-사용자 입력에서 정기 지출, 계약, 구독, 보험, 세금 등의 항목을 추출합니다.
+사용자 입력에서 정기 지출, 계약, 구독, 보험, 세금, 과태료, 고지서 등 모든 납부 항목을 추출합니다.
+이미지가 고지서, 청구서, 영수증, 과태료 통지서인 경우에도 납부 금액과 기한을 반드시 추출하세요.
+이미지가 회전되어 있어도 텍스트를 최대한 인식하세요.
 
 카테고리 분류 기준:
 - telecom: 휴대폰, 인터넷, IPTV, 알뜰폰, 통신 관련
