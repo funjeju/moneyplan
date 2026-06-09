@@ -277,7 +277,7 @@ export default function ItemDetailPage() {
               </div>
               {paidMethod === 'card' && (
                 cards.length > 0 ? (
-                  <Select value={paidCardId || '__none__'} onValueChange={v => setPaidCardId(v === '__none__' ? '' : v)}>
+                  <Select value={paidCardId || '__none__'} onValueChange={v => setPaidCardId(v === '__none__' ? '' : (v ?? ''))}>
                     <SelectTrigger>
                       <SelectValue>
                         {paidCardId
