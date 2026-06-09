@@ -3,11 +3,12 @@ import { useState } from 'react'
 import { X, Check, Pencil } from 'lucide-react'
 import { CategoryBadge } from '@/components/shared/CategoryBadge'
 import { useItems } from '@/hooks/useItems'
+import { useGroups } from '@/hooks/useGroups'
 import { useAuth } from '@/hooks/useAuth'
 import { uploadParseImages } from '@/lib/storage/uploadParseImages'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ItemForm } from '@/components/items/ItemForm'
-import type { ParseResponse, ResponsibilityItem } from '@/lib/types'
+import type { ParseResponse, ParsedItem, ResponsibilityItem } from '@/lib/types'
 
 const CYCLE_LABELS: Record<string, string> = {
   monthly: '매월', bimonthly: '2개월', quarterly: '분기',
@@ -23,12 +24,13 @@ interface Props {
 
 export function ParseResultPreview({ result, sourceImages, onConfirm, onClose }: Props) {
   const { addItems } = useItems()
+  const { addGroup } = useGroups()
   const { user } = useAuth()
   const items = result.items ?? []
   const followUpQuestions = result.followUpQuestions ?? []
 
   const [selected, setSelected] = useState<boolean[]>(items.map(() => true))
-  const [drafts, setDrafts] = useState<Partial<ResponsibilityItem>[]>(items)
+  const [drafts, setDrafts] = useState<ParsedItem[]>(items)
   const [editingIdx, setEditingIdx] = useState<number | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -52,9 +54,30 @@ export function ParseResultPreview({ result, sourceImages, onConfirm, onClose }:
       if (sourceImages?.length && user) {
         sourceImageUrls = await uploadParseImages(user.uid, sourceImages)
       }
-      const toAdd = drafts
-        .filter((_, i) => selected[i])
-        .map(item => sourceImageUrls ? { ...item, sourceImageUrls } : item)
+      const selectedDrafts = drafts.filter((_, i) => selected[i])
+
+      // groupName 기준으로 그룹 생성 후 groupId 매핑
+      const groupNameToId: Record<string, string> = {}
+      for (const item of selectedDrafts) {
+        const gName = (item as any).groupName
+        if (gName && !groupNameToId[gName] && user) {
+          const gId = await addGroup({
+            name: gName,
+            category: item.category ?? 'other',
+            provider: item.provider ?? undefined,
+          })
+          groupNameToId[gName] = gId
+        }
+      }
+
+      const toAdd = selectedDrafts.map(item => {
+        const gName = (item as any).groupName
+        const base = { ...item }
+        delete (base as any).groupName
+        if (gName && groupNameToId[gName]) base.groupId = groupNameToId[gName]
+        if (sourceImageUrls) base.sourceImageUrls = sourceImageUrls
+        return base
+      })
       await addItems(toAdd)
       onConfirm()
     } catch (e: any) {

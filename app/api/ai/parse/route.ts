@@ -33,6 +33,7 @@ const PARSE_SYSTEM_PROMPT = `당신은 생활 재정 책임 관리 앱의 AI 파
   "items": [
     {
       "name": "항목명",
+      "groupName": "같은 청구서/공급업체 묶음이면 동일한 그룹명 (예: 'SKT 통신 패키지'). 단독 항목이면 null",
       "category": "카테고리 슬러그",
       "provider": "공급업체명 또는 null",
       "amount": 숫자 또는 null,

@@ -2,12 +2,14 @@
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useItems } from '@/hooks/useItems'
+import { useGroups } from '@/hooks/useGroups'
 import { ItemCard } from '@/components/items/ItemCard'
+import { GroupCard } from '@/components/items/GroupCard'
 import { ItemForm } from '@/components/items/ItemForm'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Plus, Search, X } from 'lucide-react'
-import { getDaysUntilPayment } from '@/lib/utils'
+import { getDaysUntilPayment, toMonthlyAmount } from '@/lib/utils'
 import { CATEGORY_META } from '@/lib/utils/category'
 import type { CategorySlug } from '@/lib/types'
 
@@ -20,19 +22,36 @@ const SORT_OPTIONS = [
 
 export default function ItemsPage() {
   const router = useRouter()
-  const { items, isLoading, addItem } = useItems()
+  const { items, isLoading: itemsLoading, addItem } = useItems()
+  const { groups, isLoading: groupsLoading } = useGroups()
   const [sort, setSort] = useState('payment')
   const [showForm, setShowForm] = useState(false)
   const [search, setSearch] = useState('')
   const [filterCategory, setFilterCategory] = useState<CategorySlug | ''>('')
+
+  const isLoading = itemsLoading || groupsLoading
+
+  // 그룹 항목 / 개별 항목 분리
+  const groupedItems = useMemo(() => {
+    const map: Record<string, typeof items> = {}
+    items.forEach(item => {
+      if (item.groupId) {
+        if (!map[item.groupId]) map[item.groupId] = []
+        map[item.groupId].push(item)
+      }
+    })
+    return map
+  }, [items])
+
+  const ungroupedItems = useMemo(() => items.filter(i => !i.groupId), [items])
 
   const categories = useMemo(() => {
     const used = new Set(items.map(i => i.category))
     return Array.from(used).map(slug => ({ slug, label: CATEGORY_META[slug]?.label ?? slug }))
   }, [items])
 
-  const filtered = useMemo(() => {
-    let list = [...items]
+  const filteredUngrouped = useMemo(() => {
+    let list = [...ungroupedItems]
     if (search) {
       const q = search.toLowerCase()
       list = list.filter(i =>
@@ -49,16 +68,32 @@ export default function ItemsPage() {
       return 0
     })
     return list
-  }, [items, search, filterCategory, sort])
+  }, [ungroupedItems, search, filterCategory, sort])
+
+  const filteredGroups = useMemo(() => {
+    return groups.filter(g => {
+      const gItems = groupedItems[g.id] ?? []
+      if (filterCategory && g.category !== filterCategory) return false
+      if (search) {
+        const q = search.toLowerCase()
+        return (
+          g.name.toLowerCase().includes(q) ||
+          g.provider?.toLowerCase().includes(q) ||
+          gItems.some(i => i.name.toLowerCase().includes(q))
+        )
+      }
+      return true
+    })
+  }, [groups, groupedItems, search, filterCategory])
+
+  const totalCount = filteredGroups.length + filteredUngrouped.length
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-xl font-semibold">전체 항목</h1>
-          <p className="text-sm text-gray-400 mt-0.5">
-            {filtered.length !== items.length ? `${filtered.length} / ${items.length}개` : `${items.length}개`}
-          </p>
+          <p className="text-sm text-gray-400 mt-0.5">{totalCount}개</p>
         </div>
         <Button onClick={() => setShowForm(true)} size="sm" className="bg-[#6C63FF] hover:bg-[#5A52E8]">
           <Plus size={14} className="mr-1" /> 추가
@@ -82,7 +117,7 @@ export default function ItemsPage() {
         )}
       </div>
 
-      {/* 필터 + 정렬 */}
+      {/* 카테고리 필터 */}
       <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
         <button
           onClick={() => setFilterCategory('')}
@@ -130,7 +165,7 @@ export default function ItemsPage() {
             <div key={i} className="bg-white rounded-2xl h-32 animate-pulse" />
           ))}
         </div>
-      ) : filtered.length === 0 ? (
+      ) : totalCount === 0 ? (
         <div className="text-center py-16 text-gray-400">
           <div className="text-4xl mb-3">{search || filterCategory ? '🔍' : '📭'}</div>
           <p className="text-sm">
@@ -147,7 +182,15 @@ export default function ItemsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {filtered.map(item => (
+          {filteredGroups.map(group => (
+            <GroupCard
+              key={group.id}
+              group={group}
+              items={groupedItems[group.id] ?? []}
+              onClick={() => router.push(`/groups/${group.id}`)}
+            />
+          ))}
+          {filteredUngrouped.map(item => (
             <ItemCard key={item.id} item={item} onClick={() => router.push(`/items/${item.id}`)} />
           ))}
         </div>

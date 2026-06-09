@@ -62,6 +62,7 @@ export interface ResponsibilityItem {
   owner?: string
   ownerType?: 'self' | 'spouse' | 'parent' | 'child' | 'business'
   attachments?: Attachment[]
+  groupId?: string
   aiParsed: boolean
   aiConfidence?: number
   rawInput?: string
@@ -129,8 +130,21 @@ export interface User {
   updatedAt: Timestamp
 }
 
+export interface ItemGroup {
+  id: string
+  userId: string
+  name: string
+  category: CategorySlug
+  provider?: string
+  memo?: string
+  createdAt: Timestamp
+  updatedAt: Timestamp
+}
+
+export type ParsedItem = Partial<ResponsibilityItem> & { groupName?: string }
+
 export interface ParseResponse {
-  items: Partial<ResponsibilityItem>[]
+  items: ParsedItem[]
   confidence: number
   missingFields: string[][]
   followUpQuestions: string[]
