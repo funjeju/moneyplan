@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { ArrowLeft, Pencil, Trash2, CheckCircle2, Upload } from 'lucide-react'
+import { ArrowLeft, Pencil, Trash2, CheckCircle2, Upload, XCircle } from 'lucide-react'
 import * as Icons from 'lucide-react'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { storage } from '@/lib/firebase'
@@ -52,6 +52,9 @@ export default function ItemDetailPage() {
   const [otherMethod, setOtherMethod] = useState('')
   const [receiptFile, setReceiptFile] = useState<File | null>(null)
   const [savingPaid, setSavingPaid] = useState(false)
+  const [showCancelDialog, setShowCancelDialog] = useState(false)
+  const [cancelDate, setCancelDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [cancelReason, setCancelReason] = useState('')
 
   const { data: item, isLoading } = useQuery<ResponsibilityItem>({
     queryKey: ['item', id],
@@ -125,6 +128,19 @@ export default function ItemDetailPage() {
     }
   }
 
+  const handleCancel = () => {
+    updateItem({
+      id: item.id,
+      data: {
+        status: 'cancelled',
+        cancelledAt: new Date(cancelDate) as any,
+        ...(cancelReason ? { cancellationReason: cancelReason } : {}),
+      },
+    })
+    setShowCancelDialog(false)
+    router.back()
+  }
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
       {/* 헤더 */}
@@ -133,13 +149,21 @@ export default function ItemDetailPage() {
           <ArrowLeft size={20} />
         </button>
         <h1 className="text-lg font-semibold flex-1">항목 상세</h1>
-        {item.cycle === 'once' && item.status !== 'paid' && (
+        {item.cycle === 'once' && item.status !== 'paid' && item.status !== 'cancelled' && (
           <Button size="sm" className="bg-green-500 hover:bg-green-600 text-white" onClick={() => setShowPaidDialog(true)}>
             <CheckCircle2 size={14} className="mr-1" /> 납부완료
           </Button>
         )}
+        {item.cycle !== 'once' && item.status === 'active' && (
+          <Button size="sm" variant="outline" className="text-red-500 border-red-200 hover:bg-red-50" onClick={() => setShowCancelDialog(true)}>
+            <XCircle size={14} className="mr-1" /> 중단
+          </Button>
+        )}
         {item.status === 'paid' && (
           <span className="text-xs bg-green-50 text-green-600 border border-green-200 px-2 py-1 rounded-lg font-medium">✅ 납부완료</span>
+        )}
+        {item.status === 'cancelled' && (
+          <span className="text-xs bg-red-50 text-red-400 border border-red-200 px-2 py-1 rounded-lg font-medium">🚫 중단됨</span>
         )}
         <Button variant="outline" size="sm" onClick={() => setShowEdit(true)}>
           <Pencil size={14} className="mr-1" /> 편집
@@ -339,6 +363,42 @@ export default function ItemDetailPage() {
             <Button className="flex-1 bg-green-500 hover:bg-green-600" onClick={handleMarkPaid} disabled={savingPaid}>
               {savingPaid ? '처리 중...' : '완료 처리'}
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 중단 다이얼로그 */}
+      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>구독/서비스 중단</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-gray-500">
+              <strong>{item.status !== 'cancelled' ? item.name : ''}</strong> 항목을 중단 처리합니다.<br />
+              중단된 항목은 지출 집계에서 제외되고 중단 메뉴로 이동합니다.
+            </p>
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">중단일 *</label>
+              <input
+                type="date"
+                value={cancelDate}
+                onChange={e => setCancelDate(e.target.value)}
+                className="w-full rounded-md border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">중단 사유 (선택)</label>
+              <input
+                type="text"
+                value={cancelReason}
+                onChange={e => setCancelReason(e.target.value)}
+                placeholder="비용 절감, 서비스 불필요 등"
+                className="w-full rounded-md border border-input px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+          </div>
+          <div className="flex gap-2 mt-2">
+            <Button variant="outline" className="flex-1" onClick={() => setShowCancelDialog(false)}>취소</Button>
+            <Button className="flex-1 bg-red-500 hover:bg-red-600 text-white" onClick={handleCancel}>중단 처리</Button>
           </div>
         </DialogContent>
       </Dialog>

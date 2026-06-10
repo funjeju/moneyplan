@@ -71,6 +71,8 @@ export interface ResponsibilityItem {
   status: 'active' | 'expiring' | 'expired' | 'cancelled' | 'paused' | 'paid'
   paidAt?: Timestamp
   receiptUrl?: string
+  cancelledAt?: Timestamp
+  cancellationReason?: string
   isArchived: boolean
   memo?: string
   createdAt: Timestamp
