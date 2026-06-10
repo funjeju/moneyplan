@@ -45,7 +45,18 @@ export function ItemForm({ initialData, onSave, onCancel }: Props) {
   const [provider, setProvider] = useState(initialData?.provider ?? '')
   const [paymentCardId, setPaymentCardId] = useState<string>(initialData?.paymentCardId ?? '')
   const [paymentMethod, setPaymentMethod] = useState(initialData?.paymentMethod ?? '')
-  const [contractEndDate, setContractEndDate] = useState('')
+  const [contractStartDate, setContractStartDate] = useState(() => {
+    const d = initialData?.contractStartDate as any
+    if (!d) return ''
+    const date = d?.toDate ? d.toDate() : new Date(d)
+    return date.toISOString().slice(0, 10)
+  })
+  const [contractEndDate, setContractEndDate] = useState(() => {
+    const d = initialData?.contractEndDate as any
+    if (!d) return ''
+    const date = d?.toDate ? d.toDate() : new Date(d)
+    return date.toISOString().slice(0, 10)
+  })
   const [autoRenews, setAutoRenews] = useState(initialData?.autoRenews ?? false)
   const [isAutoPayment, setIsAutoPayment] = useState(initialData?.isAutoPayment ?? false)
   const [memo, setMemo] = useState(initialData?.memo ?? '')
@@ -71,6 +82,9 @@ export function ItemForm({ initialData, onSave, onCancel }: Props) {
       owner: owner || undefined,
       status: 'active',
       aiParsed: false,
+    }
+    if (contractStartDate) {
+      data.contractStartDate = new Date(contractStartDate) as any
     }
     if (contractEndDate) {
       data.contractEndDate = new Date(contractEndDate) as any
@@ -192,13 +206,23 @@ export function ItemForm({ initialData, onSave, onCancel }: Props) {
         </div>
       </div>
 
-      <div>
-        <label className="text-xs text-gray-500 mb-1 block">약정/계약 종료일</label>
-        <Input
-          type="date"
-          value={contractEndDate}
-          onChange={e => setContractEndDate(e.target.value)}
-        />
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">약정/계약 시작일</label>
+          <Input
+            type="date"
+            value={contractStartDate}
+            onChange={e => setContractStartDate(e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">약정/계약 종료일</label>
+          <Input
+            type="date"
+            value={contractEndDate}
+            onChange={e => setContractEndDate(e.target.value)}
+          />
+        </div>
       </div>
 
       <div>
@@ -211,9 +235,9 @@ export function ItemForm({ initialData, onSave, onCancel }: Props) {
           <label className="text-xs text-gray-500 mb-1 block">그룹</label>
           <Select value={groupId || '__none__'} onValueChange={v => setGroupId(v === '__none__' ? '' : (v ?? ''))}>
             <SelectTrigger>
-              <span className="text-sm truncate">
+              <SelectValue>
                 {groupId ? (groups.find(g => g.id === groupId)?.name ?? '그룹 선택') : '그룹 없음'}
-              </span>
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="__none__">그룹 없음</SelectItem>
@@ -259,7 +283,7 @@ export function ItemForm({ initialData, onSave, onCancel }: Props) {
 
       <div className="flex gap-2 pt-2">
         <Button variant="outline" onClick={onCancel} className="flex-1">취소</Button>
-        <Button onClick={handleSave} className="flex-1" disabled={!name || !amount}>
+        <Button onClick={handleSave} className="flex-1 bg-[#6C63FF] hover:bg-[#5a52e0] text-white disabled:opacity-40" disabled={!name || !amount}>
           저장
         </Button>
       </div>
