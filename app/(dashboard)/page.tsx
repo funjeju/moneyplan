@@ -67,6 +67,7 @@ export default function DashboardPage() {
         monthlyTotal={metrics.monthlyTotal}
         urgentPaymentCount={metrics.urgentPayments.length}
         expiringCount={metrics.expiringAll.length}
+        expiringItems={metrics.expiringAll}
         cards={cards}
         items={items}
       />
