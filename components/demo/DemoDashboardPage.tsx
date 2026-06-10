@@ -109,6 +109,7 @@ export function DemoDashboardPage() {
         monthlyTotal={monthlyTotal}
         urgentPaymentCount={urgentPayments.length}
         expiringCount={expiringItems.length}
+        expiringItems={expiringItems}
         cards={DEMO_CARDS}
         items={activeItems}
       />
