@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
       for (const img of imageList) {
         contentParts.push({
           type: 'image_url',
-          image_url: { url: `data:${img.mimeType};base64,${img.data}`, detail: 'high' },
+          image_url: { url: `data:${img.mimeType};base64,${img.data}`, detail: 'auto' },
         })
       }
     } else {
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
     }
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-5',
+      model: 'gpt-5.4-mini',
       messages: [{ role: 'user', content: contentParts }],
       max_completion_tokens: 4096,
     })
